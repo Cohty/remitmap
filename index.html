@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Global MNO & Remittance Explorer</title>
-<meta name="description" content="Interactive globe showing leading mobile operators and live remittance flows for every country.">
+<title>RemitMap — Global MNO & Remittance Explorer</title>
+<meta name="description" content="Live globe showing mobile operators, remittance flows, and cheapest transfer providers for every country.">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="data.js"></script>
@@ -13,126 +13,282 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#030810;font-family:'Syne',sans-serif;color:#e8f4ff;overflow:hidden;height:100vh;width:100vw}
 #app{position:relative;width:100vw;height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+
+/* ── CANVAS ── */
 #stars{position:absolute;inset:0;pointer-events:none}
 #globe-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
 #globe-canvas.grabbing{cursor:grabbing}
 
-/* ── TOP BAR ── */
-#topbar{position:absolute;top:0;left:0;right:0;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;z-index:10;pointer-events:none;background:linear-gradient(to bottom,rgba(3,8,16,.92),transparent)}
-#topbar h1{font-size:14px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
-#topbar p{font-size:10px;color:#7aa8cc;letter-spacing:.08em;margin-top:2px;font-family:'Space Mono',monospace}
-#live-badge{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:10px;color:#00e5a0;letter-spacing:.1em}
-#live-dot{width:6px;height:6px;border-radius:50%;background:#00e5a0;animation:pdot 2s infinite}
-@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+/* ── TOPBAR ── */
+#topbar{
+  position:absolute;top:0;left:0;right:0;height:56px;
+  padding:0 20px;display:flex;align-items:center;justify-content:space-between;
+  z-index:25;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(3,8,16,.96) 60%,transparent);
+}
+#tb-left h1{font-size:13px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+#tb-left p{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.07em;margin-top:1px}
+#tb-right{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:#00e5a0;letter-spacing:.1em}
+#live-dot{width:6px;height:6px;border-radius:50%;background:#00e5a0;animation:pdot 2s infinite;flex-shrink:0}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
 
-/* ── STATUS BAR ── */
-#data-status{position:absolute;top:62px;right:24px;z-index:10;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;pointer-events:none;display:flex;align-items:center;gap:6px}
-#sdot{width:5px;height:5px;border-radius:50%;background:#666;flex-shrink:0;transition:background .3s}
+/* ── GLOBAL COUNTER (topbar center) ── */
+#global-counter{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  text-align:center;pointer-events:none;
+}
+#gc-label{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.12em;color:#7aa8cc;text-transform:uppercase;margin-bottom:1px}
+#gc-value{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:#00e5a0;letter-spacing:.04em;line-height:1}
+#gc-sub{font-family:'Space Mono',monospace;font-size:6.5px;color:#7aa8cc;opacity:.5;margin-top:2px;letter-spacing:.08em}
+
+/* ── STATUS ── */
+#data-status{position:absolute;top:60px;right:20px;z-index:25;pointer-events:none;display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:8px}
+#sdot{width:5px;height:5px;border-radius:50%;background:#555;flex-shrink:0;transition:background .4s}
 #sdot.live{background:#00e5a0}
 #sdot.cached{background:#ffa500}
 #sdot.offline{background:#ff4444}
 #stxt{color:#7aa8cc}
 
-/* ── ZOOM ── */
-#zoom-controls{position:absolute;bottom:44px;right:24px;display:flex;flex-direction:column;gap:6px;z-index:10}
-.zoom-btn{width:32px;height:32px;background:rgba(10,25,50,.85);border:.5px solid rgba(58,154,255,.3);border-radius:8px;color:#7aa8cc;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none}
-.zoom-btn:hover{background:rgba(20,50,100,.95);color:#3a9aff;border-color:rgba(58,154,255,.6)}
-.zoom-btn:active{transform:scale(.9)}
-#hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:10px;color:rgba(122,168,204,.4);letter-spacing:.1em;pointer-events:none;z-index:10;white-space:nowrap}
+/* ════════════════════════════════════════
+   FX TICKER PANEL — left side
+════════════════════════════════════════ */
+#fx-panel{
+  position:absolute;left:0;top:56px;bottom:40px;width:168px;
+  background:rgba(3,9,22,.88);
+  border-right:.5px solid rgba(58,154,255,.16);
+  backdrop-filter:blur(24px);
+  z-index:20;display:flex;flex-direction:column;
+  transform:translateX(0);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+#fx-panel.fx-hidden{transform:translateX(-168px)}
 
-/* ── PANEL ── */
+/* Collapsed tab */
+#fx-tab{
+  position:absolute;left:0;top:calc(50% - 40px);
+  width:18px;padding:12px 2px;
+  background:rgba(3,9,22,.92);
+  border:.5px solid rgba(58,154,255,.18);border-left:none;
+  border-radius:0 6px 6px 0;
+  cursor:pointer;z-index:19;
+  font-family:'Space Mono',monospace;font-size:8px;
+  color:#3a9aff;letter-spacing:.1em;
+  writing-mode:vertical-rl;
+  display:none;transition:background .15s;
+}
+#fx-tab:hover{background:rgba(20,50,100,.95)}
+
+#fx-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px}
+#fx-title{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;color:#3a9aff;letter-spacing:.14em}
+#fx-collapse-btn{color:#7aa8cc;font-size:13px;padding:0 2px;transition:color .15s;line-height:1}
+#fx-collapse-btn:hover{color:#e8f4ff}
+#fx-sub-label{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;letter-spacing:.1em;padding:0 12px 8px;border-bottom:.5px solid rgba(58,154,255,.1);text-transform:uppercase}
+#fx-list{flex:1;overflow-y:auto;padding:4px 0}
+#fx-list::-webkit-scrollbar{width:2px}
+#fx-list::-webkit-scrollbar-thumb{background:rgba(58,154,255,.2);border-radius:1px}
+
+.fx-row{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 12px;cursor:pointer;
+  transition:background .12s;
+  border-left:2px solid transparent;
+}
+.fx-row:hover{background:rgba(58,154,255,.07);border-left-color:rgba(58,154,255,.35)}
+.fx-flag{width:15px;height:11px;border-radius:2px;object-fit:cover;flex-shrink:0}
+.fx-code{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;color:#e8f4ff;width:30px;flex-shrink:0}
+.fx-rate{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;flex:1;text-align:right}
+.fx-rate.loaded{color:#a0c8e8}
+
+#fx-footer{
+  font-family:'Space Mono',monospace;font-size:6.5px;color:#7aa8cc;
+  opacity:.45;padding:5px 12px;
+  border-top:.5px solid rgba(58,154,255,.08);text-align:center;
+}
+
+/* ════════════════════════════════════════
+   LEADERBOARD — bottom
+════════════════════════════════════════ */
+#leaderboard{
+  position:absolute;bottom:0;left:0;right:0;z-index:20;
+  background:rgba(3,9,22,.92);
+  border-top:.5px solid rgba(58,154,255,.18);
+  backdrop-filter:blur(24px);
+  height:40px;overflow:hidden;
+  transition:height .32s cubic-bezier(.4,0,.2,1);
+}
+#leaderboard.lb-open{height:242px}
+
+#lb-header{
+  display:flex;align-items:center;justify-content:space-between;
+  height:40px;padding:0 16px;cursor:pointer;user-select:none;flex-shrink:0;
+}
+#lb-tabs{display:flex;align-items:center;gap:8px}
+.lb-tab{
+  font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;
+  color:#7aa8cc;padding:4px 9px;border-radius:4px;
+  border:.5px solid transparent;transition:all .15s;
+}
+.lb-tab.active{color:#3a9aff;background:rgba(58,154,255,.09);border-color:rgba(58,154,255,.22)}
+.lb-tab:hover:not(.active){color:#e8f4ff}
+#lb-year-tag{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;opacity:.4;letter-spacing:.06em;padding-left:6px}
+#lb-toggle{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.08em;display:flex;align-items:center;gap:4px;transition:color .15s}
+#lb-header:hover #lb-toggle{color:#3a9aff}
+#lb-arrow{display:inline-block;transition:transform .32s;font-size:7px}
+#leaderboard.lb-open #lb-arrow{transform:rotate(180deg)}
+
+#lb-body{padding:4px 12px 8px;height:202px;overflow:hidden}
+#lb-list{display:flex;flex-direction:column;gap:3px}
+
+.lb-row{
+  display:flex;align-items:center;gap:9px;padding:5px 9px;
+  border-radius:7px;cursor:pointer;
+  background:rgba(255,255,255,.015);border:.5px solid transparent;
+  transition:all .13s;flex-shrink:0;
+}
+.lb-row:hover{background:rgba(58,154,255,.08);border-color:rgba(58,154,255,.14)}
+.lb-rank{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;width:16px;text-align:center;flex-shrink:0}
+.lb-flag{width:20px;height:13px;border-radius:2px;object-fit:cover;flex-shrink:0}
+.lb-name{font-family:'Syne',sans-serif;font-size:10.5px;font-weight:600;color:#e8f4ff;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-amt{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;flex-shrink:0;width:50px;text-align:right}
+.lb-amt.recv{color:#00e5a0}
+.lb-amt.send{color:#ff9500}
+.lb-info{font-family:'Space Mono',monospace;font-size:7.5px;color:#7aa8cc;flex-shrink:0;width:108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-bar{width:52px;flex-shrink:0}
+.lb-bar-track{height:3px;background:rgba(255,255,255,.05);border-radius:2px}
+.lb-bar-fill{height:3px;border-radius:2px;transition:width .5s ease}
+
+/* ── FLOATING UI — shifts when leaderboard/FX changes ── */
+#zoom-controls{
+  position:absolute;bottom:48px;right:20px;
+  display:flex;flex-direction:column;gap:6px;z-index:22;
+  transition:bottom .32s cubic-bezier(.4,0,.2,1);
+}
+#app.lb-open #zoom-controls{bottom:250px}
+.zoom-btn{
+  width:30px;height:30px;background:rgba(8,20,46,.88);
+  border:.5px solid rgba(58,154,255,.28)!important;border-radius:7px;
+  color:#7aa8cc;font-size:18px;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;user-select:none;
+}
+.zoom-btn:hover{background:rgba(20,50,110,.95);color:#3a9aff;border-color:rgba(58,154,255,.6)!important}
+.zoom-btn:active{transform:scale(.9)}
+
+#arc-legend{
+  position:absolute;bottom:48px;left:176px;z-index:22;pointer-events:none;
+  transition:left .3s cubic-bezier(.4,0,.2,1),bottom .32s cubic-bezier(.4,0,.2,1);
+}
+#app.lb-open #arc-legend{bottom:250px}
+#app.fx-hidden #arc-legend{left:8px}
+.li{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.07em;margin-bottom:4px}
+.ld{width:12px;height:2px;border-radius:1px}
+
+#hint{
+  position:absolute;bottom:48px;left:50%;transform:translateX(-50%);
+  font-family:'Space Mono',monospace;font-size:8px;color:rgba(122,168,204,.32);
+  letter-spacing:.1em;pointer-events:none;z-index:22;white-space:nowrap;
+  transition:bottom .32s cubic-bezier(.4,0,.2,1);
+}
+#app.lb-open #hint{bottom:250px}
+
+/* ── FX panel moves up when leaderboard opens ── */
+#app.lb-open #fx-panel{bottom:242px}
+
+/* ════════════════════════════════════════
+   INFO PANEL — right
+════════════════════════════════════════ */
 #info-panel{
-  position:absolute;top:50%;right:24px;transform:translateY(-50%);
-  width:316px;max-height:92vh;overflow-y:auto;
-  background:rgba(4,12,28,.97);border:.5px solid rgba(58,154,255,.28);
-  border-radius:16px;padding:0;z-index:20;display:none;
+  position:absolute;top:50%;right:20px;transform:translateY(-50%);
+  width:306px;max-height:calc(100vh - 120px);overflow-y:auto;
+  background:rgba(4,12,28,.97);border:.5px solid rgba(58,154,255,.26);
+  border-radius:15px;padding:0;z-index:22;display:none;
   backdrop-filter:blur(20px);
-  box-shadow:0 0 50px rgba(58,154,255,.08),0 20px 60px rgba(0,0,0,.7);
+  box-shadow:0 0 50px rgba(58,154,255,.07),0 20px 60px rgba(0,0,0,.7);
   animation:pin .22s cubic-bezier(.34,1.56,.64,1);
 }
 @keyframes pin{from{opacity:0;transform:translateY(-50%) translateX(12px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
-#info-panel::-webkit-scrollbar{width:4px}
-#info-panel::-webkit-scrollbar-track{background:transparent}
-#info-panel::-webkit-scrollbar-thumb{background:rgba(58,154,255,.2);border-radius:2px}
+#info-panel::-webkit-scrollbar{width:3px}
+#info-panel::-webkit-scrollbar-thumb{background:rgba(58,154,255,.18);border-radius:2px}
 
-/* ── PANEL HEADER ── */
-#panel-top{padding:18px 18px 0;display:flex;justify-content:space-between;align-items:flex-start}
-#country-identity{display:flex;align-items:center;gap:12px}
-#country-flag-img{width:48px;height:auto;border-radius:4px;display:block;box-shadow:0 2px 8px rgba(0,0,0,.4);flex-shrink:0}
-#flag-fallback{width:48px;height:32px;border-radius:4px;background:rgba(58,154,255,.15);border:.5px solid rgba(58,154,255,.2);display:none;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:11px;color:#7aa8cc;letter-spacing:.05em;flex-shrink:0}
-#country-name{font-size:19px;font-weight:700;color:#e8f4ff;margin-top:2px}
-#close-btn{background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.1);border-radius:50%;width:27px;height:27px;color:#7aa8cc;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
-#close-btn:hover{background:rgba(255,255,255,.12);color:#e8f4ff}
+#panel-top{padding:15px 15px 0;display:flex;justify-content:space-between;align-items:flex-start}
+#country-identity{display:flex;align-items:center;gap:10px}
+#country-flag-img{width:42px;height:auto;border-radius:3px;display:block;box-shadow:0 2px 8px rgba(0,0,0,.4);flex-shrink:0}
+#flag-fallback{width:42px;height:28px;border-radius:3px;background:rgba(58,154,255,.12);border:.5px solid rgba(58,154,255,.2);display:none;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;flex-shrink:0}
+#country-name{font-size:16px;font-weight:700;color:#e8f4ff;margin-top:1px}
+#close-btn{background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.1)!important;border-radius:50%;width:25px;height:25px;color:#7aa8cc;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+#close-btn:hover{background:rgba(255,255,255,.11);color:#e8f4ff}
 
-/* ── TABS ── */
-#panel-tabs{display:flex;padding:12px 18px 0;gap:4px}
-.ptab{flex:1;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:7px 0;text-align:center;cursor:pointer;border-radius:6px;border:.5px solid transparent;color:#7aa8cc;background:transparent;transition:all .15s}
-.ptab.active{background:rgba(58,154,255,.12);border-color:rgba(58,154,255,.3);color:#3a9aff}
+#panel-tabs{display:flex;padding:10px 15px 0;gap:4px}
+.ptab{flex:1;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;padding:6px 0;text-align:center;border-radius:5px;border:.5px solid transparent!important;color:#7aa8cc;background:transparent;transition:all .15s}
+.ptab.active{background:rgba(58,154,255,.11);border-color:rgba(58,154,255,.28)!important;color:#3a9aff}
 .ptab:hover:not(.active){background:rgba(255,255,255,.04)}
 
-/* ── TAB PANES ── */
-.tab-pane{padding:14px 18px 18px;display:none}
+.tab-pane{padding:11px 15px 15px;display:none}
 .tab-pane.show{display:block}
 
-/* ── OVERVIEW ── */
-.slabel{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#3a9aff;margin-bottom:8px;opacity:.8;display:flex;align-items:center;gap:6px}
-.slabel-pill{background:rgba(58,154,255,.1);border:.5px solid rgba(58,154,255,.2);border-radius:3px;padding:1px 5px;font-size:8px;letter-spacing:.06em;color:#3a9aff;opacity:1}
-.mno-card{background:rgba(58,154,255,.07);border:.5px solid rgba(58,154,255,.18);border-radius:10px;padding:12px;margin-bottom:12px}
-#mno-name{font-size:14px;font-weight:700;color:#e8f4ff;margin-bottom:3px}
-#mno-subs{font-family:'Space Mono',monospace;font-size:11px;color:#3a9aff}
-#mno-share{font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;margin-top:1px}
-.rem-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.rem-card{background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:10px;padding:10px}
-.rem-lbl{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;letter-spacing:.06em;margin-bottom:4px}
-.rem-val{font-size:14px;font-weight:700}
+.slabel{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#3a9aff;margin-bottom:7px;opacity:.8;display:flex;align-items:center;gap:6px}
+.slabel-pill{background:rgba(58,154,255,.1);border:.5px solid rgba(58,154,255,.2);border-radius:3px;padding:1px 5px;font-size:7px;color:#3a9aff;opacity:1}
+.mno-card{background:rgba(58,154,255,.07);border:.5px solid rgba(58,154,255,.16);border-radius:9px;padding:11px;margin-bottom:11px}
+#mno-name{font-size:13px;font-weight:700;color:#e8f4ff;margin-bottom:2px}
+#mno-subs{font-family:'Space Mono',monospace;font-size:10px;color:#3a9aff}
+#mno-share{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;margin-top:1px}
+.rem-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px}
+.rem-card{background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:9px}
+.rem-lbl{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.05em;margin-bottom:3px}
+.rem-val{font-size:13px;font-weight:700}
 .rem-val.in{color:#00e5a0}.rem-val.out{color:#ff9500}
-.rem-sub{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;margin-top:2px}
-#rem-note{font-size:11px;color:#7aa8cc;line-height:1.6;border-top:.5px solid rgba(255,255,255,.06);padding-top:10px;font-family:'Space Mono',monospace}
-#rem-badges{display:flex;align-items:center;gap:5px;margin-top:8px;flex-wrap:wrap}
-.badge{display:inline-block;font-size:9px;border-radius:4px;padding:2px 6px;font-family:'Space Mono',monospace;letter-spacing:.06em}
-.badge-year{background:rgba(58,154,255,.1);border:.5px solid rgba(58,154,255,.22);color:#3a9aff}
-.badge-live{background:rgba(0,229,160,.08);border:.5px solid rgba(0,229,160,.2);color:#00e5a0}
-.badge-base{background:rgba(255,165,0,.08);border:.5px solid rgba(255,165,0,.2);color:#ffa500}
+.rem-sub{font-family:'Space Mono',monospace;font-size:7.5px;color:#7aa8cc;margin-top:2px}
+#rem-note{font-size:10px;color:#7aa8cc;line-height:1.65;border-top:.5px solid rgba(255,255,255,.06);padding-top:9px;font-family:'Space Mono',monospace}
+#rem-badges{display:flex;align-items:center;gap:4px;margin-top:7px;flex-wrap:wrap}
+.badge{display:inline-block;font-size:7.5px;border-radius:3px;padding:2px 5px;font-family:'Space Mono',monospace;letter-spacing:.05em}
+.badge-year{background:rgba(58,154,255,.1);border:.5px solid rgba(58,154,255,.2);color:#3a9aff}
+.badge-live{background:rgba(0,229,160,.08);border:.5px solid rgba(0,229,160,.18);color:#00e5a0}
+.badge-base{background:rgba(255,165,0,.08);border:.5px solid rgba(255,165,0,.18);color:#ffa500}
 
-/* ── PROVIDERS TAB ── */
-.midmarket-box{background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;margin-bottom:12px}
-.midmarket-row{display:flex;justify-content:space-between;align-items:center}
-.midmarket-label{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;letter-spacing:.06em;margin-bottom:3px}
-#mm-value{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#e8f4ff}
-#mm-time{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;text-align:right}
-#mm-updating{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;display:flex;align-items:center;gap:5px}
-
-.prov-card{border-radius:10px;padding:12px;margin-bottom:8px;border:.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);transition:background .15s}
-.prov-card:last-of-type{margin-bottom:0}
+/* Providers tab */
+#mm-label{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#3a9aff;margin-bottom:7px;opacity:.8}
+.mm-box{background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:9px 11px;margin-bottom:10px}
+.mm-lbl{font-family:'Space Mono',monospace;font-size:7.5px;color:#7aa8cc;letter-spacing:.06em;margin-bottom:2px}
+#mm-value{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#e8f4ff}
+#mm-time{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;text-align:right}
+#mm-upd{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;display:flex;align-items:center;gap:5px;margin-top:5px;display:none}
+.prov-card{border-radius:9px;padding:10px;margin-bottom:7px;border:.5px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);transition:background .12s}
 .prov-card:hover{background:rgba(255,255,255,.04)}
-.prov-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.prov-left{display:flex;align-items:center;gap:8px}
-.prov-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.prov-name{font-size:13px;font-weight:700;color:#e8f4ff}
-.prov-type{font-family:'Space Mono',monospace;font-size:8px;padding:2px 5px;border-radius:3px;letter-spacing:.05em}
-.type-digital{background:rgba(0,185,255,.1);color:#00B9FF;border:.5px solid rgba(0,185,255,.2)}
-.type-agent{background:rgba(255,165,0,.1);color:#ffa500;border:.5px solid rgba(255,165,0,.2)}
-.type-bank{background:rgba(0,229,160,.1);color:#00e5a0;border:.5px solid rgba(0,229,160,.2)}
-.prov-speed{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc}
-.prov-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
-.pstat{background:rgba(0,0,0,.2);border-radius:6px;padding:6px 8px;text-align:center}
-.pstat-lbl{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.04em;margin-bottom:2px}
-.pstat-val{font-size:12px;font-weight:700;color:#e8f4ff}
-.pstat-val.cheap{color:#00e5a0}
-.prov-recv{font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;text-align:center;padding:5px;background:rgba(0,0,0,.15);border-radius:5px;margin-bottom:8px;min-height:28px;display:flex;align-items:center;justify-content:center}
-.prov-recv span{color:#e8f4ff;font-weight:700;margin-left:4px}
-.prov-btn{display:block;text-align:center;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;color:#3a9aff;text-decoration:none;padding:7px;border:.5px solid rgba(58,154,255,.25);border-radius:6px;transition:all .15s;cursor:pointer}
-.prov-btn:hover{background:rgba(58,154,255,.1);border-color:rgba(58,154,255,.5)}
-.prov-note-txt{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;margin-top:6px;line-height:1.5}
-.disclaimer{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;opacity:.5;text-align:center;padding:10px 0 0;line-height:1.5;border-top:.5px solid rgba(255,255,255,.05);margin-top:8px}
-
-/* ── ARC LEGEND ── */
-#arc-legend{position:absolute;bottom:44px;left:20px;z-index:10;pointer-events:none}
-.li{display:flex;align-items:center;gap:7px;font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;letter-spacing:.07em;margin-bottom:4px}
-.ld{width:14px;height:2px;border-radius:1px}
+.prov-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.prov-left{display:flex;align-items:center;gap:6px}
+.prov-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.prov-name{font-size:12px;font-weight:700;color:#e8f4ff}
+.prov-type{font-family:'Space Mono',monospace;font-size:7px;padding:2px 4px;border-radius:3px}
+.td{background:rgba(0,185,255,.1);color:#00B9FF;border:.5px solid rgba(0,185,255,.18)}
+.ta{background:rgba(255,165,0,.1);color:#ffa500;border:.5px solid rgba(255,165,0,.18)}
+.tb{background:rgba(0,229,160,.1);color:#00e5a0;border:.5px solid rgba(0,229,160,.18)}
+.prov-spd{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc}
+.pstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:6px}
+.ps{background:rgba(0,0,0,.2);border-radius:5px;padding:5px 6px;text-align:center}
+.psl{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;margin-bottom:2px}
+.psv{font-size:11px;font-weight:700;color:#e8f4ff}
+.psv.chp{color:#00e5a0}
+.prov-recv{font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;text-align:center;padding:4px;background:rgba(0,0,0,.15);border-radius:4px;margin-bottom:6px;min-height:24px;display:flex;align-items:center;justify-content:center}
+.prov-recv span{color:#e8f4ff;font-weight:700;margin-left:3px}
+.prov-btn{display:block;text-align:center;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.07em;color:#3a9aff;text-decoration:none;padding:6px;border:.5px solid rgba(58,154,255,.2)!important;border-radius:5px;transition:all .15s}
+.prov-btn:hover{background:rgba(58,154,255,.09);border-color:rgba(58,154,255,.45)!important}
+.prov-note-txt{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;margin-top:5px;line-height:1.5}
+.disc{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;opacity:.4;text-align:center;padding:7px 0 0;line-height:1.5;border-top:.5px solid rgba(255,255,255,.04);margin-top:6px}
 
 @keyframes spin{to{transform:rotate(360deg)}}
-.spin{width:9px;height:9px;border:1.5px solid rgba(58,154,255,.2);border-top-color:#3a9aff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+.spin{width:8px;height:8px;border:1.5px solid rgba(58,154,255,.15);border-top-color:#3a9aff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+
+/* ── RESPONSIVE ── */
+@media(max-width:680px){
+  #fx-panel,#fx-tab{display:none!important}
+  #arc-legend{left:8px!important}
+  #global-counter{display:none}
+  #leaderboard.lb-open{height:200px}
+  .lb-info,.lb-bar{display:none}
+}
+@media(max-height:560px){
+  #leaderboard.lb-open{height:170px}
+}
 </style>
 </head>
 <body>
@@ -140,19 +296,48 @@ body{background:#030810;font-family:'Syne',sans-serif;color:#e8f4ff;overflow:hid
   <canvas id="stars"></canvas>
   <canvas id="globe-canvas"></canvas>
 
+  <!-- ── TOP BAR ── -->
   <div id="topbar">
-    <div><h1>Global Connectivity</h1><p>MNO Leaders &amp; Live Remittance Flows · Click any country</p></div>
-    <div id="live-badge"><div id="live-dot"></div>LIVE DATA</div>
+    <div id="tb-left">
+      <h1>RemitMap</h1>
+      <p>Global MNO &amp; Remittance Intelligence · Click any country</p>
+    </div>
+    <div id="global-counter">
+      <div id="gc-label">REMITTANCES SENT TODAY (EST.)</div>
+      <div id="gc-value">$0.00B</div>
+      <div id="gc-sub">WORLD BANK 2024 · $905B ANNUAL · ~$28,668/SEC</div>
+    </div>
+    <div id="tb-right"><div id="live-dot"></div>LIVE</div>
   </div>
   <div id="data-status"><div id="sdot"></div><span id="stxt">Connecting…</span></div>
 
+  <!-- ── FX TICKER ── -->
+  <div id="fx-panel">
+    <div id="fx-head">
+      <span id="fx-title">FX LIVE</span>
+      <button id="fx-collapse-btn" onclick="toggleFX()" title="Collapse">‹</button>
+    </div>
+    <div id="fx-sub-label">USD MID-MARKET</div>
+    <div id="fx-list"></div>
+    <div id="fx-footer">—</div>
+  </div>
+  <div id="fx-tab" onclick="toggleFX()">FX</div>
+
+  <!-- ── ZOOM ── -->
   <div id="zoom-controls">
     <button class="zoom-btn" id="zoom-in">+</button>
     <button class="zoom-btn" id="zoom-out">−</button>
   </div>
 
+  <!-- ── ARC LEGEND ── -->
+  <div id="arc-legend">
+    <div class="li"><div class="ld" style="background:#00d4ff"></div>REMITTANCE CORRIDOR</div>
+    <div class="li"><div class="ld" style="background:#ff6b35"></div>HIGH VOLUME FLOW</div>
+  </div>
+  <div id="hint">SCROLL TO ZOOM · DRAG TO ROTATE · CLICK COUNTRY</div>
+
+  <!-- ── INFO PANEL ── -->
   <div id="info-panel">
-    <!-- Header -->
     <div id="panel-top">
       <div id="country-identity">
         <div style="flex-shrink:0">
@@ -164,14 +349,11 @@ body{background:#030810;font-family:'Syne',sans-serif;color:#e8f4ff;overflow:hid
       </div>
       <button id="close-btn" onclick="closePanel()">✕</button>
     </div>
-
-    <!-- Tabs -->
     <div id="panel-tabs">
       <button class="ptab active" id="tab-btn-overview"  onclick="switchTab('overview')">OVERVIEW</button>
       <button class="ptab"        id="tab-btn-providers" onclick="switchTab('providers')">SEND MONEY</button>
     </div>
-
-    <!-- Overview pane -->
+    <!-- Overview -->
     <div id="pane-overview" class="tab-pane show">
       <div class="slabel">LEADING MOBILE OPERATOR</div>
       <div class="mno-card">
@@ -179,462 +361,374 @@ body{background:#030810;font-family:'Syne',sans-serif;color:#e8f4ff;overflow:hid
         <div id="mno-subs"></div>
         <div id="mno-share"></div>
       </div>
-      <div class="slabel">
-        REMITTANCE FLOWS
-        <span class="slabel-pill" id="rem-year-pill"></span>
-      </div>
+      <div class="slabel">REMITTANCE FLOWS <span class="slabel-pill" id="rem-year-pill"></span></div>
       <div class="rem-grid">
-        <div class="rem-card">
-          <div class="rem-lbl">↓ RECEIVED</div>
-          <div class="rem-val in" id="rem-in">–</div>
-          <div class="rem-sub"   id="rem-in-gdp"></div>
-        </div>
-        <div class="rem-card">
-          <div class="rem-lbl">↑ SENT</div>
-          <div class="rem-val out" id="rem-out">–</div>
-        </div>
+        <div class="rem-card"><div class="rem-lbl">↓ RECEIVED</div><div class="rem-val in" id="rem-in">–</div><div class="rem-sub" id="rem-in-gdp"></div></div>
+        <div class="rem-card"><div class="rem-lbl">↑ SENT</div><div class="rem-val out" id="rem-out">–</div></div>
       </div>
       <div id="rem-note"></div>
-      <div id="rem-badges">
-        <span class="badge badge-year" id="rem-year-badge"></span>
-        <span class="badge" id="rem-src-badge"></span>
-      </div>
+      <div id="rem-badges"><span class="badge badge-year" id="rem-year-badge"></span><span class="badge" id="rem-src-badge"></span></div>
     </div>
-
-    <!-- Providers pane -->
+    <!-- Providers -->
     <div id="pane-providers" class="tab-pane">
-      <!-- Mid-market box -->
-      <div class="slabel" id="mm-label">MID-MARKET RATE · USD →</div>
-      <div class="midmarket-box">
-        <div class="midmarket-row">
-          <div>
-            <div class="midmarket-label">MID-MARKET RATE (NO MARKUP)</div>
-            <div id="mm-value">–</div>
-          </div>
+      <div id="mm-label">MID-MARKET RATE · USD →</div>
+      <div class="mm-box">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><div class="mm-lbl">MID-MARKET RATE (NO MARKUP)</div><div id="mm-value">–</div></div>
           <div id="mm-time"></div>
         </div>
-        <div id="mm-updating" style="display:none;margin-top:6px">
-          <span class="spin"></span>
-          <span style="font-size:9px">Fetching live rate…</span>
-        </div>
+        <div id="mm-upd"><span class="spin"></span><span style="font-size:8px;margin-left:4px">Fetching live rate…</span></div>
       </div>
-
       <div class="slabel">TOP 3 CHEAPEST PROVIDERS</div>
       <div id="providers-list"></div>
-      <div class="disclaimer">
-        Rates estimated for a $200 USD transfer.<br>
-        Fees &amp; FX margins: World Bank RPW Q1 2025 + provider data.<br>
-        Always confirm live rates on provider site before sending.
-      </div>
+      <div class="disc">Rates for $200 USD · World Bank RPW Q1 2025 · Confirm on provider site before sending</div>
     </div>
   </div>
 
-  <div id="arc-legend">
-    <div class="li"><div class="ld" style="background:#00d4ff"></div>REMITTANCE CORRIDOR</div>
-    <div class="li"><div class="ld" style="background:#ff6b35"></div>HIGH VOLUME FLOW</div>
+  <!-- ── LEADERBOARD ── -->
+  <div id="leaderboard">
+    <div id="lb-header" onclick="toggleLB()">
+      <div id="lb-tabs">
+        <button class="lb-tab active" id="lb-tab-r" onclick="event.stopPropagation();setLbTab('receivers')">▼ TOP RECEIVERS</button>
+        <button class="lb-tab"        id="lb-tab-s" onclick="event.stopPropagation();setLbTab('senders')">▲ TOP SENDERS</button>
+        <span id="lb-year-tag">2024 · WORLD BANK EST.</span>
+      </div>
+      <div id="lb-toggle"><span id="lb-arrow">▲</span>&nbsp;LEADERBOARD</div>
+    </div>
+    <div id="lb-body">
+      <div id="lb-list"></div>
+    </div>
   </div>
-  <div id="hint">SCROLL TO ZOOM · DRAG TO ROTATE · CLICK COUNTRY FOR DATA</div>
-</div>
 
+</div><!-- #app -->
 <script>
 // ── ISO MAPS ──────────────────────────────────────────────────────────────────
 const NAMES={4:'Afghanistan',8:'Albania',12:'Algeria',24:'Angola',32:'Argentina',36:'Australia',40:'Austria',50:'Bangladesh',56:'Belgium',64:'Bhutan',68:'Bolivia',76:'Brazil',100:'Bulgaria',104:'Myanmar',116:'Cambodia',120:'Cameroon',124:'Canada',144:'Sri Lanka',152:'Chile',156:'China',158:'Taiwan',170:'Colombia',178:'Republic of Congo',180:'DR Congo',188:'Costa Rica',191:'Croatia',192:'Cuba',196:'Cyprus',203:'Czech Republic',208:'Denmark',214:'Dominican Republic',218:'Ecuador',222:'El Salvador',231:'Ethiopia',238:'Falkland Islands',246:'Finland',250:'France',266:'Gabon',276:'Germany',288:'Ghana',300:'Greece',320:'Guatemala',324:'Guinea',332:'Haiti',340:'Honduras',348:'Hungary',356:'India',360:'Indonesia',364:'Iran',368:'Iraq',372:'Ireland',376:'Israel',380:'Italy',388:'Jamaica',392:'Japan',398:'Kazakhstan',400:'Jordan',404:'Kenya',408:'North Korea',410:'South Korea',414:'Kuwait',418:'Laos',422:'Lebanon',426:'Lesotho',430:'Liberia',434:'Libya',440:'Lithuania',442:'Luxembourg',450:'Madagascar',454:'Malawi',458:'Malaysia',466:'Mali',484:'Mexico',496:'Mongolia',504:'Morocco',508:'Mozambique',516:'Namibia',524:'Nepal',528:'Netherlands',554:'New Zealand',558:'Nicaragua',562:'Niger',566:'Nigeria',578:'Norway',586:'Pakistan',591:'Panama',598:'Papua New Guinea',604:'Peru',608:'Philippines',616:'Poland',620:'Portugal',634:'Qatar',642:'Romania',643:'Russia',646:'Rwanda',682:'Saudi Arabia',686:'Senegal',694:'Sierra Leone',703:'Slovakia',704:'Vietnam',705:'Slovenia',706:'Somalia',710:'South Africa',716:'Zimbabwe',724:'Spain',729:'Sudan',740:'Suriname',752:'Sweden',756:'Switzerland',760:'Syria',762:'Tajikistan',764:'Thailand',768:'Togo',780:'Trinidad and Tobago',784:'UAE',788:'Tunisia',792:'Turkey',800:'Uganda',804:'Ukraine',818:'Egypt',826:'United Kingdom',834:'Tanzania',840:'United States',858:'Uruguay',860:'Uzbekistan',862:'Venezuela',887:'Yemen',894:'Zambia'};
-
 const ISO2={'Afghanistan':'AF','Albania':'AL','Algeria':'DZ','Angola':'AO','Argentina':'AR','Australia':'AU','Austria':'AT','Bangladesh':'BD','Belgium':'BE','Bhutan':'BT','Bolivia':'BO','Brazil':'BR','Bulgaria':'BG','Myanmar':'MM','Cambodia':'KH','Cameroon':'CM','Canada':'CA','Sri Lanka':'LK','Chile':'CL','China':'CN','Taiwan':'TW','Colombia':'CO','Republic of Congo':'CG','DR Congo':'CD','Costa Rica':'CR','Croatia':'HR','Cuba':'CU','Cyprus':'CY','Czech Republic':'CZ','Denmark':'DK','Dominican Republic':'DO','Ecuador':'EC','Egypt':'EG','El Salvador':'SV','Ethiopia':'ET','Falkland Islands':'FK','Finland':'FI','France':'FR','Gabon':'GA','Germany':'DE','Ghana':'GH','Greece':'GR','Guatemala':'GT','Guinea':'GN','Haiti':'HT','Honduras':'HN','Hungary':'HU','India':'IN','Indonesia':'ID','Iran':'IR','Iraq':'IQ','Ireland':'IE','Israel':'IL','Italy':'IT','Jamaica':'JM','Japan':'JP','Jordan':'JO','Kazakhstan':'KZ','Kenya':'KE','North Korea':'KP','South Korea':'KR','Kuwait':'KW','Laos':'LA','Lebanon':'LB','Lesotho':'LS','Liberia':'LR','Libya':'LY','Lithuania':'LT','Luxembourg':'LU','Madagascar':'MG','Malawi':'MW','Malaysia':'MY','Mali':'ML','Mexico':'MX','Mongolia':'MN','Morocco':'MA','Mozambique':'MZ','Namibia':'NA','Nepal':'NP','Netherlands':'NL','New Zealand':'NZ','Nicaragua':'NI','Niger':'NE','Nigeria':'NG','Norway':'NO','Pakistan':'PK','Panama':'PA','Papua New Guinea':'PG','Peru':'PE','Philippines':'PH','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO','Russia':'RU','Rwanda':'RW','Saudi Arabia':'SA','Senegal':'SN','Sierra Leone':'SL','Slovakia':'SK','Slovenia':'SI','Somalia':'SO','South Africa':'ZA','Zimbabwe':'ZW','Spain':'ES','Sudan':'SD','Suriname':'SR','Sweden':'SE','Switzerland':'CH','Syria':'SY','Tajikistan':'TJ','Tanzania':'TZ','Thailand':'TH','Togo':'TG','Trinidad and Tobago':'TT','Tunisia':'TN','Turkey':'TR','UAE':'AE','Uganda':'UG','Ukraine':'UA','United Kingdom':'GB','United States':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE','Vietnam':'VN','Yemen':'YE','Zambia':'ZM'};
-
 const CENS={'Afghanistan':[67.7,33.9],'Albania':[20.2,41.2],'Algeria':[2.6,28.0],'Angola':[17.9,-11.2],'Argentina':[-63.6,-38.4],'Australia':[133.8,-25.3],'Austria':[14.5,47.5],'Bangladesh':[90.4,23.7],'Belgium':[4.5,50.5],'Bhutan':[90.4,27.5],'Bolivia':[-64.9,-16.3],'Brazil':[-51.9,-14.2],'Bulgaria':[25.5,42.7],'Myanmar':[96.7,17.1],'Cambodia':[104.9,12.6],'Cameroon':[12.4,3.9],'Canada':[-96.8,56.1],'Sri Lanka':[80.7,7.9],'Chile':[-71.5,-35.7],'China':[104.2,35.9],'Taiwan':[120.9,23.7],'Colombia':[-74.3,4.1],'Republic of Congo':[15.8,-0.2],'DR Congo':[23.7,-4.0],'Costa Rica':[-83.8,9.7],'Croatia':[16.4,45.1],'Cuba':[-79.5,21.5],'Cyprus':[33.1,35.1],'Czech Republic':[15.5,49.8],'Denmark':[10.0,56.3],'Dominican Republic':[-70.2,18.7],'Ecuador':[-78.1,-1.8],'Egypt':[30.8,26.8],'El Salvador':[-88.9,13.8],'Ethiopia':[40.5,9.1],'Falkland Islands':[-59.5,-51.8],'Finland':[25.7,61.9],'France':[2.2,46.2],'Gabon':[11.6,-0.8],'Germany':[10.5,51.2],'Ghana':[-1.0,7.9],'Greece':[21.8,39.1],'Guatemala':[-90.2,15.8],'Guinea':[-11.3,11.0],'Haiti':[-72.3,18.9],'Honduras':[-86.6,15.2],'Hungary':[19.5,47.2],'India':[78.9,20.6],'Indonesia':[113.9,-0.8],'Iran':[53.7,32.4],'Iraq':[43.7,33.2],'Ireland':[-8.2,53.4],'Israel':[34.9,31.5],'Italy':[12.6,42.5],'Jamaica':[-77.3,18.1],'Japan':[138.3,36.2],'Jordan':[36.2,30.6],'Kazakhstan':[66.9,48.0],'Kenya':[37.9,0.0],'North Korea':[127.5,40.3],'South Korea':[127.8,36.5],'Kuwait':[47.5,29.3],'Laos':[103.9,17.4],'Lebanon':[35.9,33.9],'Lesotho':[28.2,-29.6],'Liberia':[-9.4,6.4],'Libya':[17.2,27.0],'Lithuania':[23.9,55.2],'Luxembourg':[6.1,49.8],'Madagascar':[46.9,-19.4],'Malawi':[34.3,-13.3],'Malaysia':[109.7,4.2],'Mali':[-2.0,17.6],'Mexico':[-102.6,23.6],'Mongolia':[103.8,46.9],'Morocco':[-7.1,31.8],'Mozambique':[35.5,-18.7],'Namibia':[18.5,-22.0],'Nepal':[84.1,28.4],'Netherlands':[5.3,52.1],'New Zealand':[172.0,-42.0],'Nicaragua':[-85.2,12.9],'Niger':[8.1,16.1],'Nigeria':[8.7,9.1],'Norway':[8.5,60.5],'Pakistan':[69.3,30.4],'Panama':[-80.8,8.5],'Papua New Guinea':[143.9,-6.3],'Peru':[-75.0,-9.2],'Philippines':[121.8,12.9],'Poland':[19.1,52.1],'Portugal':[-8.2,39.4],'Qatar':[51.2,25.4],'Romania':[24.9,45.9],'Russia':[99.0,61.5],'Rwanda':[29.9,-1.9],'Saudi Arabia':[45.1,24.2],'Senegal':[-14.5,14.5],'Sierra Leone':[-11.8,8.5],'Slovakia':[19.7,48.7],'Slovenia':[14.8,46.1],'Somalia':[46.2,6.1],'South Africa':[25.1,-29.0],'Zimbabwe':[29.2,-19.0],'Spain':[-3.7,40.2],'Sudan':[30.2,15.9],'Suriname':[-56.0,4.0],'Sweden':[15.2,62.2],'Switzerland':[8.2,46.8],'Syria':[38.3,35.0],'Tajikistan':[71.3,38.9],'Tanzania':[34.9,-6.4],'Thailand':[101.0,15.9],'Togo':[0.8,8.6],'Trinidad and Tobago':[-61.2,10.7],'Tunisia':[9.5,33.9],'Turkey':[35.2,39.1],'UAE':[53.8,24.0],'Uganda':[32.3,1.4],'Ukraine':[31.2,49.0],'United Kingdom':[-3.4,55.4],'United States':[-99.1,38.5],'Uruguay':[-56.0,-32.5],'Uzbekistan':[63.9,41.4],'Venezuela':[-66.6,6.4],'Vietnam':[108.3,14.1],'Yemen':[47.6,15.9],'Zambia':[27.8,-13.1]};
-
 const CORRIDORS=[{f:'United States',t:'Mexico',h:true},{f:'United States',t:'India',h:true},{f:'United States',t:'China',h:true},{f:'United States',t:'Philippines',h:true},{f:'United States',t:'Vietnam',h:true},{f:'United States',t:'Nigeria',h:false},{f:'United States',t:'El Salvador',h:false},{f:'United States',t:'Guatemala',h:true},{f:'United States',t:'Dominican Republic',h:false},{f:'United States',t:'Honduras',h:false},{f:'United States',t:'Jamaica',h:false},{f:'United States',t:'Colombia',h:false},{f:'United States',t:'Ecuador',h:false},{f:'United States',t:'Haiti',h:false},{f:'United States',t:'Kenya',h:false},{f:'United States',t:'Nicaragua',h:false},{f:'UAE',t:'India',h:true},{f:'UAE',t:'Pakistan',h:true},{f:'UAE',t:'Bangladesh',h:false},{f:'UAE',t:'Philippines',h:false},{f:'UAE',t:'Nepal',h:false},{f:'Saudi Arabia',t:'India',h:true},{f:'Saudi Arabia',t:'Pakistan',h:true},{f:'Saudi Arabia',t:'Bangladesh',h:false},{f:'Saudi Arabia',t:'Egypt',h:false},{f:'Saudi Arabia',t:'Philippines',h:false},{f:'Kuwait',t:'India',h:false},{f:'Kuwait',t:'Pakistan',h:false},{f:'Qatar',t:'India',h:false},{f:'Qatar',t:'Nepal',h:false},{f:'United Kingdom',t:'India',h:true},{f:'United Kingdom',t:'Nigeria',h:false},{f:'United Kingdom',t:'Pakistan',h:false},{f:'United Kingdom',t:'Ghana',h:false},{f:'United Kingdom',t:'Kenya',h:false},{f:'Germany',t:'Turkey',h:false},{f:'Germany',t:'India',h:false},{f:'France',t:'Morocco',h:false},{f:'France',t:'Algeria',h:false},{f:'France',t:'Tunisia',h:false},{f:'France',t:'Senegal',h:false},{f:'Italy',t:'Romania',h:false},{f:'Italy',t:'Morocco',h:false},{f:'Italy',t:'Bangladesh',h:false},{f:'Spain',t:'Colombia',h:false},{f:'Spain',t:'Morocco',h:false},{f:'Spain',t:'Ecuador',h:false},{f:'Russia',t:'Uzbekistan',h:true},{f:'Russia',t:'Ukraine',h:false},{f:'Russia',t:'Tajikistan',h:false},{f:'South Africa',t:'Zimbabwe',h:false},{f:'South Africa',t:'Mozambique',h:false},{f:'South Africa',t:'Malawi',h:false},{f:'Canada',t:'India',h:false},{f:'Canada',t:'Philippines',h:false},{f:'Australia',t:'Philippines',h:false},{f:'Australia',t:'India',h:false},{f:'Japan',t:'Philippines',h:false},{f:'Japan',t:'Vietnam',h:false},{f:'South Korea',t:'Vietnam',h:false},{f:'Malaysia',t:'Bangladesh',h:false},{f:'Malaysia',t:'Indonesia',h:false},{f:'Portugal',t:'Brazil',h:false},{f:'Netherlands',t:'Morocco',h:false},{f:'Belgium',t:'Morocco',h:false},{f:'Sweden',t:'Somalia',h:false},{f:'Norway',t:'Somalia',h:false},{f:'India',t:'Nepal',h:false},{f:'Mexico',t:'Guatemala',h:false},{f:'Argentina',t:'Bolivia',h:false},{f:'China',t:'Vietnam',h:false},{f:'Thailand',t:'Myanmar',h:false},{f:'Thailand',t:'Cambodia',h:false}];
 
+// ── LEADERBOARD DATA (World Bank 2024 estimates) ──────────────────────────────
+const LB = {
+  receivers:[
+    {name:'India',        iso2:'IN',v:129e9,disp:'$129B',info:'← USA & UAE'},
+    {name:'Mexico',       iso2:'MX',v:68e9, disp:'$68B', info:'← USA'},
+    {name:'China',        iso2:'CN',v:48e9, disp:'$48B', info:'← USA & Australia'},
+    {name:'Philippines',  iso2:'PH',v:40e9, disp:'$40B', info:'← USA & UAE'},
+    {name:'Pakistan',     iso2:'PK',v:33e9, disp:'$33B', info:'← UAE & Saudi Arabia'},
+    {name:'Egypt',        iso2:'EG',v:28e9, disp:'$28B', info:'← Gulf States'},
+    {name:'Bangladesh',   iso2:'BD',v:22e9, disp:'$22B', info:'← UAE & Saudi Arabia'},
+    {name:'Nigeria',      iso2:'NG',v:20e9, disp:'$20B', info:'← USA & UK'},
+    {name:'Ukraine',      iso2:'UA',v:20e9, disp:'$20B', info:'← Europe'},
+    {name:'Vietnam',      iso2:'VN',v:16e9, disp:'$16B', info:'← USA & S.Korea'},
+  ],
+  senders:[
+    {name:'United States', iso2:'US',v:68e9,  disp:'$68B',   info:'→ Mexico & India'},
+    {name:'UAE',           iso2:'AE',v:45e9,  disp:'$45B',   info:'→ India & Pakistan'},
+    {name:'Saudi Arabia',  iso2:'SA',v:38e9,  disp:'$38B',   info:'→ India & Pakistan'},
+    {name:'Switzerland',   iso2:'CH',v:28e9,  disp:'$28B',   info:'→ India & SE Asia'},
+    {name:'United Kingdom',iso2:'GB',v:25e9,  disp:'$25B',   info:'→ India & Nigeria'},
+    {name:'Canada',        iso2:'CA',v:25e9,  disp:'$25B',   info:'→ India & Philippines'},
+    {name:'Germany',       iso2:'DE',v:24e9,  disp:'$24B',   info:'→ Turkey & India'},
+    {name:'Kuwait',        iso2:'KW',v:14.5e9,disp:'$14.5B', info:'→ India & Pakistan'},
+    {name:'Qatar',         iso2:'QA',v:14.5e9,disp:'$14.5B', info:'→ India & Nepal'},
+    {name:'France',        iso2:'FR',v:13e9,  disp:'$13B',   info:'→ Morocco & Senegal'},
+  ]
+};
+
+// ── FX PAIRS ──────────────────────────────────────────────────────────────────
+const FX_PAIRS=[
+  {code:'INR',flag:'in',country:'India'},
+  {code:'MXN',flag:'mx',country:'Mexico'},
+  {code:'PHP',flag:'ph',country:'Philippines'},
+  {code:'PKR',flag:'pk',country:'Pakistan'},
+  {code:'NGN',flag:'ng',country:'Nigeria'},
+  {code:'EGP',flag:'eg',country:'Egypt'},
+  {code:'BDT',flag:'bd',country:'Bangladesh'},
+  {code:'VND',flag:'vn',country:'Vietnam'},
+  {code:'IDR',flag:'id',country:'Indonesia'},
+  {code:'MAD',flag:'ma',country:'Morocco'},
+  {code:'KES',flag:'ke',country:'Kenya'},
+  {code:'GHS',flag:'gh',country:'Ghana'},
+  {code:'UAH',flag:'ua',country:'Ukraine'},
+  {code:'GTQ',flag:'gt',country:'Guatemala'},
+  {code:'NPR',flag:'np',country:'Nepal'},
+];
+const FX_COUNTRY={INR:'India',MXN:'Mexico',PHP:'Philippines',PKR:'Pakistan',NGN:'Nigeria',EGP:'Egypt',BDT:'Bangladesh',VND:'Vietnam',IDR:'Indonesia',MAD:'Morocco',KES:'Kenya',GHS:'Ghana',UAH:'Ukraine',GTQ:'Guatemala',NPR:'Nepal'};
+
 // ══════════════════════════════════════════════════════════════════════════════
-// DATA LAYER — non-blocking, all async work done in background
+// GLOBAL COUNTER
 // ══════════════════════════════════════════════════════════════════════════════
-const WB_KEY = 'wb_rem_v4';
-const FX_KEY = 'fx_v3';
-let wbData  = {};
-let fxRates = {};       // populated async — never blocks UI
-let fxTs    = null;
-
-function setStatus(cls, txt) {
-  document.getElementById('sdot').className = cls;
-  document.getElementById('stxt').textContent = txt;
+const PER_SEC = 905e9 / 365.25 / 86400;
+function gcTick(){
+  const now=new Date(),sod=new Date(now);sod.setHours(0,0,0,0);
+  const v=(now-sod)/1000*PER_SEC;
+  const s=v>=1e9?'$'+(v/1e9).toFixed(2)+'B':'$'+(v/1e6).toFixed(0)+'M';
+  const el=document.getElementById('gc-value');if(el)el.textContent=s;
 }
+gcTick(); setInterval(gcTick,2000);
 
-function fmtMoney(v) {
-  if (!v || isNaN(v)) return null;
-  const n = +v;
-  if (n >= 1e12) return '$' + (n/1e12).toFixed(1) + 'T';
-  if (n >= 1e9)  return '$' + (n/1e9).toFixed(1)  + 'B';
-  if (n >= 1e6)  return '$' + (n/1e6).toFixed(0)  + 'M';
-  return '$' + n.toFixed(0);
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA — World Bank + FX (non-blocking)
+// ══════════════════════════════════════════════════════════════════════════════
+const WB_KEY='wb_rem_v4',FX_KEY='fx_v3';
+let wbData={},fxRates={},fxTs=null;
+function g(id){return document.getElementById(id);}
+function setStatus(c,t){g('sdot').className=c;g('stxt').textContent=t;}
+function fmtM(v){if(!v||isNaN(v))return null;const n=+v;if(n>=1e12)return'$'+(n/1e12).toFixed(1)+'T';if(n>=1e9)return'$'+(n/1e9).toFixed(1)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(0)+'M';return'$'+n.toFixed(0);}
+function fmtP(v){return v&&!isNaN(v)?(+v).toFixed(1)+'% of GDP':'';}
+
+async function wbOne(iso2,ind){
+  const r=await fetch(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrv=3&per_page=3`,{signal:AbortSignal.timeout(10000)});
+  if(!r.ok)throw new Error();const j=await r.json();
+  for(const e of(j[1]||[]))if(e.value!==null)return{value:e.value,year:e.date};return null;
 }
-function fmtPct(v) { return v && !isNaN(v) ? (+v).toFixed(1) + '% of GDP' : ''; }
-
-// World Bank: fetch one indicator, return {value, year} or null
-async function wbFetch(iso2, ind) {
-  const r = await fetch(
-    `https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrv=3&per_page=3`,
-    { signal: AbortSignal.timeout(10000) }
-  );
-  if (!r.ok) throw new Error('WB error');
-  const j = await r.json();
-  for (const e of (j[1] || [])) if (e.value !== null) return { value: e.value, year: e.date };
-  return null;
-}
-
-// Load WB data — runs in background, never blocks tab or panel rendering
-async function loadWBData() {
-  // Check cache first
-  try {
-    const cached = JSON.parse(localStorage.getItem(WB_KEY) || '{}');
-    if (cached.ts && Date.now() - cached.ts < 7*86400000) {
-      wbData = cached.data || {};
-      const d = new Date(cached.ts);
-      setStatus('cached', `WORLD BANK · CACHED ${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`);
-      if (currentCountry) refreshOverview();
-      return;
-    }
-  } catch(_) {}
-
-  setStatus('loading', 'FETCHING WORLD BANK DATA…');
-  const result = {};
-  const entries = Object.entries(ISO2);
-  const BATCH = 5;
-
-  for (let i = 0; i < entries.length; i += BATCH) {
-    await Promise.allSettled(entries.slice(i, i+BATCH).map(async ([name, iso2]) => {
-      try {
-        const [inf, out, gdp] = await Promise.allSettled([
-          wbFetch(iso2, 'BX.TRF.PWKR.CD.DT'),
-          wbFetch(iso2, 'BM.TRF.PWKR.CD.DT'),
-          wbFetch(iso2, 'BX.TRF.PWKR.DT.GD.ZS'),
-        ]);
-        const I = inf.status === 'fulfilled' ? inf.value : null;
-        const O = out.status === 'fulfilled' ? out.value : null;
-        const G = gdp.status === 'fulfilled' ? gdp.value : null;
-        result[name] = {
-          inflow:  I ? fmtMoney(I.value) : null,
-          outflow: O ? fmtMoney(O.value) : null,
-          gdpPct:  G ? fmtPct(G.value) : '',
-          year: I?.year || O?.year || '2023',
-          source: 'WORLD BANK'
-        };
-      } catch(_) {}
+async function loadWB(){
+  try{const c=JSON.parse(localStorage.getItem(WB_KEY)||'{}');if(c.ts&&Date.now()-c.ts<7*86400000){wbData=c.data||{};const d=new Date(c.ts);setStatus('cached',`WORLD BANK · CACHED ${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`);if(currentCountry)refreshOv();return;}}catch(_){}
+  setStatus('loading','FETCHING WORLD BANK…');
+  const res={},entries=Object.entries(ISO2),B=5;
+  for(let i=0;i<entries.length;i+=B){
+    await Promise.allSettled(entries.slice(i,i+B).map(async([nm,iso2])=>{
+      try{
+        const[inf,out,gdp]=await Promise.allSettled([wbOne(iso2,'BX.TRF.PWKR.CD.DT'),wbOne(iso2,'BM.TRF.PWKR.CD.DT'),wbOne(iso2,'BX.TRF.PWKR.DT.GD.ZS')]);
+        const I=inf.status==='fulfilled'?inf.value:null,O=out.status==='fulfilled'?out.value:null,Gv=gdp.status==='fulfilled'?gdp.value:null;
+        res[nm]={inflow:I?fmtM(I.value):null,outflow:O?fmtM(O.value):null,gdpPct:Gv?fmtP(Gv.value):'',year:I?.year||O?.year||'2023',source:'WORLD BANK'};
+      }catch(_){}
     }));
-    if (i + BATCH < entries.length) await new Promise(r => setTimeout(r, 120));
+    if(i+B<entries.length)await new Promise(r=>setTimeout(r,120));
   }
-
-  wbData = result;
-  try { localStorage.setItem(WB_KEY, JSON.stringify({ ts: Date.now(), data: wbData })); } catch(_) {}
-  const n = Object.values(wbData).filter(v => v.inflow || v.outflow).length;
-  setStatus('live', `WORLD BANK LIVE · ${n} COUNTRIES`);
-  if (currentCountry) refreshOverview();
+  wbData=res;
+  try{localStorage.setItem(WB_KEY,JSON.stringify({ts:Date.now(),data:wbData}));}catch(_){}
+  const n=Object.values(wbData).filter(v=>v.inflow||v.outflow).length;
+  setStatus('live',`WORLD BANK LIVE · ${n} COUNTRIES`);
+  if(currentCountry)refreshOv();
 }
 
-// FX rates — lightweight, loaded once on startup, 1hr cache
-async function loadFXRates() {
-  try {
-    const cached = JSON.parse(sessionStorage.getItem(FX_KEY) || '{}');
-    if (cached.ts && Date.now() - cached.ts < 3600000) {
-      fxRates = cached.rates || {}; fxTs = cached.ts; return;
-    }
-  } catch(_) {}
-  try {
-    // Use a simple, always-CORS-enabled endpoint — no auth, no timeout risk
-    const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    if (!r.ok) throw new Error();
-    const j = await r.json();
-    fxRates = j.rates || {}; fxTs = Date.now();
-    sessionStorage.setItem(FX_KEY, JSON.stringify({ ts: fxTs, rates: fxRates }));
-  } catch(_) {
-    // Silently fail — provider cards still show without "received" calculation
-    fxRates = {}; fxTs = null;
-  }
-  // If providers tab is showing, refresh the FX row
-  if (currentCountry && activeTab === 'providers') refreshFXRow(currentCountry);
+async function loadFX(){
+  try{const c=JSON.parse(sessionStorage.getItem(FX_KEY)||'{}');if(c.ts&&Date.now()-c.ts<3600000){fxRates=c.rates||{};fxTs=c.ts;renderFX();return;}}catch(_){}
+  try{
+    const r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    if(!r.ok)throw new Error();const j=await r.json();
+    fxRates=j.rates||{};fxTs=Date.now();
+    sessionStorage.setItem(FX_KEY,JSON.stringify({ts:fxTs,rates:fxRates}));
+  }catch(_){fxRates={};fxTs=null;}
+  renderFX();
+  if(currentCountry&&activeTab==='providers')refreshFXRow(currentCountry);
+}
+loadWB(); loadFX();
+setInterval(()=>{sessionStorage.removeItem(FX_KEY);loadFX();},3600000);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FX PANEL
+// ══════════════════════════════════════════════════════════════════════════════
+let fxOpen=true;
+function toggleFX(){
+  fxOpen=!fxOpen;
+  g('fx-panel').classList.toggle('fx-hidden',!fxOpen);
+  g('fx-tab').style.display=fxOpen?'none':'flex';
+  document.getElementById('app').classList.toggle('fx-hidden',!fxOpen);
+}
+function fmtRate(r){if(!r)return'–';if(r>10000)return r.toLocaleString(undefined,{maximumFractionDigits:0});if(r>100)return r.toLocaleString(undefined,{maximumFractionDigits:0});if(r>10)return r.toFixed(2);return r.toFixed(4);}
+function renderFX(){
+  const list=g('fx-list'),footer=g('fx-footer');if(!list)return;
+  list.innerHTML=FX_PAIRS.map(p=>{
+    const rate=fxRates[p.code];
+    return`<div class="fx-row" onclick="fxClick('${p.code}')">
+      <img class="fx-flag" src="https://flagcdn.com/w20/${p.flag}.png" alt="${p.code}" onerror="this.style.display='none'">
+      <span class="fx-code">${p.code}</span>
+      <span class="fx-rate${rate?' loaded':''}">${fmtRate(rate)}</span>
+    </div>`;
+  }).join('');
+  footer.textContent=fxTs?'UPDATED '+new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'RATE DATA UNAVAILABLE';
+}
+function fxClick(code){
+  const name=FX_COUNTRY[code];if(!name||!CENS[name])return;
+  const[lon,lat]=CENS[name];
+  flyTo(lon,lat,()=>{for(const[id,n]of Object.entries(NAMES)){if(n===name){selectCountry(parseInt(id),name);return;}}});
 }
 
-// Fire both in background immediately — UI never waits on these
-loadWBData();
-loadFXRates();
+// ══════════════════════════════════════════════════════════════════════════════
+// LEADERBOARD
+// ══════════════════════════════════════════════════════════════════════════════
+let lbOpen=false,lbTab='receivers';
+function toggleLB(){
+  lbOpen=!lbOpen;
+  g('leaderboard').classList.toggle('lb-open',lbOpen);
+  document.getElementById('app').classList.toggle('lb-open',lbOpen);
+  g('lb-arrow').textContent=lbOpen?'▼':'▲';
+  if(lbOpen)renderLB();
+}
+function setLbTab(tab){
+  lbTab=tab;
+  g('lb-tab-r').classList.toggle('active',tab==='receivers');
+  g('lb-tab-s').classList.toggle('active',tab==='senders');
+  renderLB();
+}
+function renderLB(){
+  const data=LB[lbTab],isSend=lbTab==='senders',maxV=data[0].v;
+  const medals=['🥇','🥈','🥉'];
+  g('lb-list').innerHTML=data.map((row,i)=>{
+    const pct=(row.v/maxV*100).toFixed(1);
+    const bar=isSend?'#ff9500':'#00e5a0';
+    const cls=isSend?'send':'recv';
+    return`<div class="lb-row" onclick="lbGo('${row.name}')">
+      <span class="lb-rank">${medals[i]||(i+1)}</span>
+      <img class="lb-flag" src="https://flagcdn.com/w20/${row.iso2.toLowerCase()}.png" alt="${row.name}" onerror="this.style.display='none'">
+      <span class="lb-name">${row.name}</span>
+      <span class="lb-amt ${cls}">${row.disp}</span>
+      <span class="lb-info">${row.info}</span>
+      <div class="lb-bar"><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${pct}%;background:${bar}"></div></div></div>
+    </div>`;
+  }).join('');
+}
+function lbGo(name){
+  const cen=CENS[name];if(!cen)return;
+  flyTo(cen[0],cen[1],()=>{for(const[id,n]of Object.entries(NAMES)){if(n===name){selectCountry(parseInt(id),name);return;}}});
+  if(lbOpen){lbOpen=false;g('leaderboard').classList.remove('lb-open');document.getElementById('app').classList.remove('lb-open');g('lb-arrow').textContent='▲';}
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PANEL STATE
+// FLY-TO ANIMATION
 // ══════════════════════════════════════════════════════════════════════════════
-let currentCountry = null;
-let activeTab = 'overview';
+function flyTo(lon,lat,done){
+  const s0=rot[0],s1=rot[1];
+  let d0=-lon-s0;while(d0>180)d0-=360;while(d0<-180)d0+=360;
+  const e1=Math.max(-65,Math.min(65,-lat));
+  const t0=performance.now(),dur=950;
+  function step(t){
+    const p=Math.min((t-t0)/dur,1),e=p<.5?2*p*p:-1+(4-2*p)*p;
+    rot[0]=s0+d0*e;rot[1]=s1+(e1-s1)*e;proj.rotate(rot);
+    if(p<1)requestAnimationFrame(step);else if(done)done();
+  }
+  requestAnimationFrame(step);
+}
 
-function switchTab(tab) {
-  activeTab = tab;
-  ['overview','providers'].forEach(t => {
-    document.getElementById('pane-' + t).classList.toggle('show', t === tab);
-    document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
+// ══════════════════════════════════════════════════════════════════════════════
+// PANEL
+// ══════════════════════════════════════════════════════════════════════════════
+let currentCountry=null,activeTab='overview';
+function switchTab(tab){
+  activeTab=tab;
+  ['overview','providers'].forEach(t=>{
+    g('pane-'+t).classList.toggle('show',t===tab);
+    g('tab-btn-'+t).classList.toggle('active',t===tab);
   });
-  // Render providers immediately (synchronous) when tab opens
-  if (tab === 'providers' && currentCountry) {
-    renderProviders(currentCountry);
-  }
+  if(tab==='providers'&&currentCountry)renderProviders(currentCountry);
 }
-window.switchTab = switchTab;
+window.switchTab=switchTab;
 
-// Refresh just the overview section (called when WB data arrives late)
-function refreshOverview() {
-  if (!currentCountry) return;
-  const mno = window.MNO_DATA?.[currentCountry] || {};
-  const wb  = wbData[currentCountry] || {};
-  const inflow  = wb.inflow  || null;
-  const outflow = wb.outflow || mno.outflow || null;
-  const gdpPct  = wb.gdpPct  || '';
-  const year    = wb.year    || '2024';
-  const src     = wb.source  || 'BASELINE 2024';
-  el('rem-in').textContent      = inflow  || 'N/A';
-  el('rem-in-gdp').textContent  = gdpPct;
-  el('rem-out').textContent     = outflow || 'N/A';
-  el('rem-year-pill').textContent  = year;
-  el('rem-year-badge').textContent = 'DATA ' + year;
-  const badge = el('rem-src-badge');
-  badge.textContent  = src;
-  badge.className    = 'badge ' + (src === 'WORLD BANK' ? 'badge-live' : 'badge-base');
+function refreshOv(){
+  if(!currentCountry)return;
+  const wb=wbData[currentCountry]||{},mno=window.MNO_DATA?.[currentCountry]||{};
+  g('rem-in').textContent=wb.inflow||'N/A';g('rem-in-gdp').textContent=wb.gdpPct||'';
+  g('rem-out').textContent=wb.outflow||mno.outflow||'N/A';
+  g('rem-year-pill').textContent=wb.year||'2024';g('rem-year-badge').textContent='DATA '+(wb.year||'2024');
+  const sb=g('rem-src-badge');sb.textContent=wb.source||'BASELINE 2024';
+  sb.className='badge '+(wb.source==='WORLD BANK'?'badge-live':'badge-base');
 }
 
-// Refresh just the FX mid-market row in providers tab
-function refreshFXRow(name) {
-  const currency = window.CURRENCY?.[name] || 'LOCAL';
-  const rate     = fxRates[currency];
-  el('mm-label').textContent = `MID-MARKET RATE · USD → ${currency}`;
-  el('mm-updating').style.display = 'none';
-  if (rate) {
-    const decimals = rate > 100 ? 0 : rate > 10 ? 2 : 4;
-    el('mm-value').textContent = `1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:decimals})} ${currency}`;
-    const ts = fxTs ? new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
-    el('mm-time').innerHTML = `<div style="text-align:right"><div>LIVE RATE</div><div style="opacity:.6">${ts ? 'Updated ' + ts : ''}</div></div>`;
-  } else {
-    el('mm-value').textContent = 'Rate unavailable';
-    el('mm-time').textContent  = '';
-  }
-  // Also update the "you receive" row in each card if FX just loaded
-  if (rate && currentCountry === name) {
-    document.querySelectorAll('.prov-recv-dynamic').forEach(el => {
-      const fee = parseFloat(el.dataset.fee);
-      const fxm = parseFloat(el.dataset.fxm);
-      const effectiveRate = rate * (1 - fxm / 100);
-      const gets = (200 - fee) * effectiveRate;
-      const decimals = gets > 1000 ? 0 : 2;
-      el.innerHTML = `$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:decimals})} ${currency}</span>`;
+function refreshFXRow(name){
+  const cur=window.CURRENCY?.[name]||'LOCAL',rate=fxRates[cur];
+  g('mm-label').textContent=`MID-MARKET RATE · USD → ${cur}`;g('mm-upd').style.display='none';
+  if(rate){
+    const d=rate>100?0:rate>10?2:4;
+    g('mm-value').textContent=`1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}`;
+    const ts=fxTs?new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    g('mm-time').innerHTML=ts?`<div style="text-align:right;font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc"><div>LIVE</div><div style="opacity:.6">${ts}</div></div>`:'';
+    document.querySelectorAll('.prec').forEach(el=>{
+      const eff=rate*(1-parseFloat(el.dataset.fxm)/100),gets=(200-parseFloat(el.dataset.fee))*eff;
+      el.innerHTML=`$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:gets>1000?0:2})} ${cur}</span>`;
     });
-  }
+  }else{g('mm-value').textContent='Rate unavailable';g('mm-time').textContent='';}
 }
 
-// FULLY SYNCHRONOUS — renders cards instantly, FX updates separately
-function renderProviders(name) {
-  const currency  = window.CURRENCY?.[name] || 'LOCAL';
-  const providers = window.PROVIDERS?.[name] || window.PROVIDERS?.['default'] || [];
-  const rate      = fxRates[currency];
-
-  // Mid-market box — show whatever we have right now, or "fetching"
-  el('mm-label').textContent = `MID-MARKET RATE · USD → ${currency}`;
-  if (rate) {
-    const decimals = rate > 100 ? 0 : rate > 10 ? 2 : 4;
-    el('mm-value').textContent = `1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:decimals})} ${currency}`;
-    const ts = fxTs ? new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
-    el('mm-time').innerHTML = ts ? `<div style="text-align:right;font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc"><div>LIVE RATE</div><div style="opacity:.6">Updated ${ts}</div></div>` : '';
-    el('mm-updating').style.display = 'none';
-  } else {
-    el('mm-value').textContent = '–';
-    el('mm-time').textContent  = '';
-    el('mm-updating').style.display = 'flex';
-    // Don't wait — FX load is already running, will call refreshFXRow when done
-  }
-
-  // Provider cards — always render immediately
-  if (!providers.length) {
-    el('providers-list').innerHTML = `<div style="font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;text-align:center;padding:16px 0;opacity:.7">No provider data available for this country.</div>`;
-    return;
-  }
-
-  const medals = ['🥇','🥈','🥉'];
-  el('providers-list').innerHTML = providers.map((p, i) => {
-    const totalPct = (p.fee_usd / 200 * 100 + p.fx_pct).toFixed(2);
-    const feeDisp  = p.fee_usd === 0 ? 'FREE' : '$' + p.fee_usd.toFixed(2);
-    const fxDisp   = p.fx_pct  === 0 ? 'MID-MARKET' : '+' + p.fx_pct + '%';
-    const isCheap  = +totalPct < 1.5;
-    const typeClass= p.type === 'digital' ? 'type-digital' : p.type === 'bank' ? 'type-bank' : 'type-agent';
-    const typeLabel= p.type === 'digital' ? 'DIGITAL' : p.type === 'bank' ? 'BANK' : 'AGENT';
-
-    // "You receive" — show if FX loaded, otherwise show placeholder that gets filled in
-    let recvHtml;
-    if (rate && currency !== 'USD') {
-      const effectiveRate = rate * (1 - p.fx_pct / 100);
-      const gets = (200 - p.fee_usd) * effectiveRate;
-      const d = gets > 1000 ? 0 : 2;
-      recvHtml = `<div class="prov-recv prov-recv-dynamic" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}">$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:d})} ${currency}</span></div>`;
-    } else if (currency === 'USD') {
-      const gets = (200 - p.fee_usd).toFixed(2);
-      recvHtml = `<div class="prov-recv">$200 → <span>$${gets} USD</span></div>`;
-    } else {
-      // FX not loaded yet — placeholder, will be filled when FX arrives
-      recvHtml = `<div class="prov-recv prov-recv-dynamic" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}" style="opacity:.5">Fetching exchange rate…</div>`;
-    }
-
-    return `
-<div class="prov-card">
-  <div class="prov-head">
-    <div class="prov-left">
-      <div class="prov-dot" style="background:${p.color}"></div>
-      <div class="prov-name">${medals[i] || ''} ${p.name}</div>
-      <span class="prov-type ${typeClass}">${typeLabel}</span>
-    </div>
-    <div class="prov-speed">⚡ ${p.delivery}</div>
-  </div>
-  <div class="prov-stats">
-    <div class="pstat"><div class="pstat-lbl">SEND FEE</div><div class="pstat-val">${feeDisp}</div></div>
-    <div class="pstat"><div class="pstat-lbl">FX MARGIN</div><div class="pstat-val">${fxDisp}</div></div>
-    <div class="pstat"><div class="pstat-lbl">TOTAL COST</div><div class="pstat-val ${isCheap?'cheap':''}">~${totalPct}%</div></div>
-  </div>
-  ${recvHtml}
-  <a class="prov-btn" href="${p.url}" target="_blank" rel="noopener">GET LIVE QUOTE ↗</a>
-  <div class="prov-note-txt">${p.note}</div>
-</div>`;
+function renderProviders(name){
+  const cur=window.CURRENCY?.[name]||'LOCAL',provs=window.PROVIDERS?.[name]||window.PROVIDERS?.['default']||[],rate=fxRates[cur];
+  g('mm-label').textContent=`MID-MARKET RATE · USD → ${cur}`;
+  if(rate){const d=rate>100?0:rate>10?2:4;g('mm-value').textContent=`1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}`;const ts=fxTs?new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';g('mm-time').innerHTML=ts?`<div style="text-align:right;font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc"><div>LIVE</div><div style="opacity:.6">${ts}</div></div>`:'';g('mm-upd').style.display='none';}
+  else{g('mm-value').textContent='–';g('mm-time').textContent='';g('mm-upd').style.display='flex';}
+  const m=['🥇','🥈','🥉'];
+  g('providers-list').innerHTML=provs.map((p,i)=>{
+    const tot=(p.fee_usd/200*100+p.fx_pct).toFixed(2);
+    const feeD=p.fee_usd===0?'FREE':'$'+p.fee_usd.toFixed(2);
+    const fxD=p.fx_pct===0?'MID-MARKET':'+'+p.fx_pct+'%';
+    const tc=p.type==='digital'?'td':p.type==='bank'?'tb':'ta';
+    const tl=p.type==='digital'?'DIGITAL':p.type==='bank'?'BANK':'AGENT';
+    let recv;
+    if(rate&&cur!=='USD'){const eff=rate*(1-p.fx_pct/100),gets=(200-p.fee_usd)*eff;recv=`<div class="prov-recv prec" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}">$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:gets>1000?0:2})} ${cur}</span></div>`;}
+    else if(cur==='USD'){recv=`<div class="prov-recv">$200 → <span>$${(200-p.fee_usd).toFixed(2)} USD</span></div>`;}
+    else{recv=`<div class="prov-recv prec" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}" style="opacity:.5">Calculating…</div>`;}
+    return`<div class="prov-card"><div class="prov-head"><div class="prov-left"><div class="prov-dot" style="background:${p.color}"></div><div class="prov-name">${m[i]||''} ${p.name}</div><span class="prov-type ${tc}">${tl}</span></div><div class="prov-spd">⚡ ${p.delivery}</div></div><div class="pstats"><div class="ps"><div class="psl">SEND FEE</div><div class="psv">${feeD}</div></div><div class="ps"><div class="psl">FX MARGIN</div><div class="psv">${fxD}</div></div><div class="ps"><div class="psl">TOTAL COST</div><div class="psv${+tot<1.5?' chp':''}">~${tot}%</div></div></div>${recv}<a class="prov-btn" href="${p.url}" target="_blank" rel="noopener">GET LIVE QUOTE ↗</a><div class="prov-note-txt">${p.note}</div></div>`;
   }).join('');
 }
 
-function el(id) { return document.getElementById(id); }
-
-function selectCountry(id, name) {
-  currentCountry = name;
-  selId = id;
-  const iso2 = ISO2[name] || '';
-
-  // Flag image (flagcdn.com — works on Windows, Mac, mobile)
-  const img = el('country-flag-img');
-  const fb  = el('flag-fallback');
-  if (iso2) {
-    img.src = `https://flagcdn.com/w48/${iso2.toLowerCase()}.png`;
-    img.alt = name; img.style.display = 'block'; fb.style.display = 'none';
-  } else {
-    img.style.display = 'none'; fb.style.display = 'flex';
-    fb.textContent = name.substring(0, 2).toUpperCase();
-  }
-
-  el('country-name').textContent = name;
-
-  // Always reset to overview tab on new country
-  activeTab = 'overview';
-  el('pane-overview').className  = 'tab-pane show';
-  el('pane-providers').className = 'tab-pane';
-  el('tab-btn-overview').className  = 'ptab active';
-  el('tab-btn-providers').className = 'ptab';
-
-  // Populate overview immediately with whatever data we have
-  const mno = window.MNO_DATA?.[name] || {};
-  const wb  = wbData[name] || {};
-
-  el('mno-name').textContent  = mno.mno  || 'Data not available';
-  el('mno-subs').textContent  = mno.subs  ? mno.subs  + ' subscribers' : '';
-  el('mno-share').textContent = mno.share ? mno.share + ' market share' : '';
-
-  const inflow  = wb.inflow  || null;
-  const outflow = wb.outflow || mno.outflow || null;
-  const gdpPct  = wb.gdpPct  || '';
-  const year    = wb.year    || '2024';
-  const src     = wb.source  || 'BASELINE 2024';
-
-  el('rem-in').textContent      = inflow  || 'N/A';
-  el('rem-in-gdp').textContent  = gdpPct;
-  el('rem-out').textContent     = outflow || 'N/A';
-  el('rem-note').textContent    = mno.note || '';
-  el('rem-year-pill').textContent  = year;
-  el('rem-year-badge').textContent = 'DATA ' + year;
-  const srcBadge = el('rem-src-badge');
-  srcBadge.textContent = src;
-  srcBadge.className   = 'badge ' + (src === 'WORLD BANK' ? 'badge-live' : 'badge-base');
-
-  el('info-panel').style.display = 'block';
+function selectCountry(id,name){
+  currentCountry=name;selId=id;
+  const iso2=ISO2[name]||'',img=g('country-flag-img'),fb=g('flag-fallback');
+  if(iso2){img.src=`https://flagcdn.com/w48/${iso2.toLowerCase()}.png`;img.alt=name;img.style.display='block';fb.style.display='none';}
+  else{img.style.display='none';fb.style.display='flex';fb.textContent=name.substring(0,2).toUpperCase();}
+  g('country-name').textContent=name;
+  activeTab='overview';
+  g('pane-overview').className='tab-pane show';g('pane-providers').className='tab-pane';
+  g('tab-btn-overview').className='ptab active';g('tab-btn-providers').className='ptab';
+  const mno=window.MNO_DATA?.[name]||{},wb=wbData[name]||{};
+  g('mno-name').textContent=mno.mno||'Data not available';
+  g('mno-subs').textContent=mno.subs?mno.subs+' subscribers':'';
+  g('mno-share').textContent=mno.share?mno.share+' market share':'';
+  g('rem-in').textContent=wb.inflow||'N/A';g('rem-in-gdp').textContent=wb.gdpPct||'';
+  g('rem-out').textContent=wb.outflow||mno.outflow||'N/A';
+  g('rem-note').textContent=mno.note||'';
+  g('rem-year-pill').textContent=wb.year||'2024';g('rem-year-badge').textContent='DATA '+(wb.year||'2024');
+  const sb=g('rem-src-badge');sb.textContent=wb.source||'BASELINE 2024';
+  sb.className='badge '+(wb.source==='WORLD BANK'?'badge-live':'badge-base');
+  g('info-panel').style.display='block';
 }
-
-function closePanel() {
-  el('info-panel').style.display = 'none';
-  currentCountry = null; selId = null;
-}
-window.closePanel = closePanel;
+function closePanel(){g('info-panel').style.display='none';currentCountry=null;selId=null;}
+window.closePanel=closePanel;
 
 // ══════════════════════════════════════════════════════════════════════════════
-// GLOBE
+// GLOBE RENDERING
 // ══════════════════════════════════════════════════════════════════════════════
-(function(){
-  const c = document.getElementById('stars'), x = c.getContext('2d');
-  c.width = window.innerWidth; c.height = window.innerHeight;
-  for (let i = 0; i < 300; i++) {
-    x.beginPath(); x.arc(Math.random()*c.width, Math.random()*c.height, Math.random()*1.1, 0, Math.PI*2);
-    x.fillStyle = `rgba(200,220,255,${(Math.random()*.45+.08).toFixed(2)})`; x.fill();
-  }
-})();
-
-const canvas = document.getElementById('globe-canvas');
-const ctx    = canvas.getContext('2d');
-let W, H, proj, pg, world, countries;
-let rot = [15, -25], selId = null;
-let dragging = false, lastMX, lastMY, didDrag;
-let baseScale, curScale = 1;
-const MIN_S=0.4, MAX_S=6;
-const ARC_STEPS=80, ARC_SPEED=0.022, ARC_TAIL=0.28, MAX_ARCS=12;
-let arcs = [], spawnTick = 0;
-
-function getS() { return baseScale * curScale; }
-function rebuildProj() {
-  proj = d3.geoOrthographic().scale(getS()).translate([W/2,H/2]).rotate(rot).clipAngle(90);
-  pg   = d3.geoPath(proj, ctx);
-}
-function resize() {
-  W = window.innerWidth; H = window.innerHeight;
-  canvas.width = W; canvas.height = H;
-  baseScale = Math.min(W,H) * 0.42;
-  rebuildProj();
-}
-function zoom(f) { curScale = Math.max(MIN_S, Math.min(MAX_S, curScale*f)); rebuildProj(); }
-canvas.addEventListener('wheel', e => { e.preventDefault(); zoom(e.deltaY<0?1.1:.91); }, {passive:false});
-el('zoom-in').onclick  = () => zoom(1.2);
-el('zoom-out').onclick = () => zoom(0.83);
-
-canvas.addEventListener('mousedown', e => { dragging=true; lastMX=e.clientX; lastMY=e.clientY; didDrag=false; canvas.classList.add('grabbing'); });
-window.addEventListener('mousemove', e => {
-  if (!dragging) return;
-  const dx=e.clientX-lastMX, dy=e.clientY-lastMY;
-  if (Math.abs(dx)>2||Math.abs(dy)>2) didDrag=true;
-  const s=.28/curScale; rot[0]+=dx*s; rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));
-  proj.rotate(rot); lastMX=e.clientX; lastMY=e.clientY;
-});
-window.addEventListener('mouseup', e => {
-  canvas.classList.remove('grabbing');
-  if (!dragging) return; dragging=false;
-  if (!didDrag) handleClick(e.clientX, e.clientY);
-});
-canvas.addEventListener('touchstart', e => { e.preventDefault(); const t=e.touches[0]; dragging=true; lastMX=t.clientX; lastMY=t.clientY; didDrag=false; }, {passive:false});
-canvas.addEventListener('touchmove', e => { e.preventDefault(); const t=e.touches[0]; const dx=t.clientX-lastMX,dy=t.clientY-lastMY; if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true; const s=.35/curScale; rot[0]+=dx*s; rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s)); proj.rotate(rot); lastMX=t.clientX; lastMY=t.clientY; }, {passive:false});
-canvas.addEventListener('touchend', e => { dragging=false; if(!didDrag){const t=e.changedTouches[0];handleClick(t.clientX,t.clientY);} });
-
-function gdSq(a,b){const dx=a[0]-b[0],dy=a[1]-b[1];return dx*dx+dy*dy;}
-function handleClick(x,y){
-  if (!countries) return;
+(function(){const c=g('stars'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;for(let i=0;i<300;i++){x.beginPath();x.arc(Math.random()*c.width,Math.random()*c.height,Math.random()*1.1,0,Math.PI*2);x.fillStyle=`rgba(200,220,255,${(Math.random()*.45+.08).toFixed(2)})`;x.fill();}})();
+const canvas=g('globe-canvas'),ctx=canvas.getContext('2d');
+let W,H,proj,pg,world,countries;
+let rot=[15,-25],selId=null,dragging=false,lastMX,lastMY,didDrag;
+let baseScale,curScale=1;
+const MIN_S=.4,MAX_S=6,ARC_STEPS=80,ARC_SPEED=.022,ARC_TAIL=.28,MAX_ARCS=12;
+let arcs=[],spawnTick=0;
+function getS(){return baseScale*curScale;}
+function rebP(){proj=d3.geoOrthographic().scale(getS()).translate([W/2,H/2]).rotate(rot).clipAngle(90);pg=d3.geoPath(proj,ctx);}
+function resize(){W=window.innerWidth;H=window.innerHeight;canvas.width=W;canvas.height=H;baseScale=Math.min(W,H)*.42;rebP();}
+function zoom(f){curScale=Math.max(MIN_S,Math.min(MAX_S,curScale*f));rebP();}
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.1:.91);},{passive:false});
+g('zoom-in').onclick=()=>zoom(1.2);g('zoom-out').onclick=()=>zoom(.83);
+canvas.addEventListener('mousedown',e=>{dragging=true;lastMX=e.clientX;lastMY=e.clientY;didDrag=false;canvas.classList.add('grabbing');});
+window.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-lastMX,dy=e.clientY-lastMY;if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;const s=.28/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=e.clientX;lastMY=e.clientY;});
+window.addEventListener('mouseup',e=>{canvas.classList.remove('grabbing');if(!dragging)return;dragging=false;if(!didDrag)hClick(e.clientX,e.clientY);});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];dragging=true;lastMX=t.clientX;lastMY=t.clientY;didDrag=false;},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];const dx=t.clientX-lastMX,dy=t.clientY-lastMY;if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;const s=.35/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=t.clientX;lastMY=t.clientY;},{passive:false});
+canvas.addEventListener('touchend',e=>{dragging=false;if(!didDrag){const t=e.changedTouches[0];hClick(t.clientX,t.clientY);}});
+function dsq(a,b){const dx=a[0]-b[0],dy=a[1]-b[1];return dx*dx+dy*dy;}
+function hClick(x,y){
+  if(!countries)return;
   const cx=W/2,cy=H/2,sc=getS(),dx=x-cx,dy=y-cy;
-  if (dx*dx+dy*dy>sc*sc){closePanel();return;}
-  const inv=proj.invert([x,y]); if(!inv){closePanel();return;}
+  if(dx*dx+dy*dy>sc*sc){closePanel();return;}
+  const inv=proj.invert([x,y]);if(!inv){closePanel();return;}
   for(const f of countries){try{if(d3.geoContains(f,inv)){const id=parseInt(f.id);const n=NAMES[id];if(n){selectCountry(id,n);return;}}}catch(_){}}
-  const thr=Math.max(2.5,8/curScale); let best=null,bestD=thr*thr;
-  for(const[n,[lon,lat]]of Object.entries(CENS)){const d=gdSq(inv,[lon,lat]);if(d<bestD){bestD=d;best=n;}}
+  const thr=Math.max(2.5,8/curScale);let best=null,bestD=thr*thr;
+  for(const[n,[lon,lat]]of Object.entries(CENS)){const d=dsq(inv,[lon,lat]);if(d<bestD){bestD=d;best=n;}}
   if(best){for(const[id,n]of Object.entries(NAMES)){if(n===best){selectCountry(parseInt(id),best);return;}}}
   closePanel();
 }
-
-function dotVis(ll){const phi=(90-ll[1])*Math.PI/180,theta=(ll[0]+180)*Math.PI/180;const v=[Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];const cp=(90+rot[1])*Math.PI/180,ct=(-rot[0]+180)*Math.PI/180;const c=[Math.sin(cp)*Math.cos(ct),Math.cos(cp),Math.sin(cp)*Math.sin(ct)];return v[0]*c[0]+v[1]*c[1]+v[2]*c[2]>.05;}
+function vis(ll){const phi=(90-ll[1])*Math.PI/180,theta=(ll[0]+180)*Math.PI/180;const v=[Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];const cp=(90+rot[1])*Math.PI/180,ct=(-rot[0]+180)*Math.PI/180;const c=[Math.sin(cp)*Math.cos(ct),Math.cos(cp),Math.sin(cp)*Math.sin(ct)];return v[0]*c[0]+v[1]*c[1]+v[2]*c[2]>.05;}
 function buildPts(fr,to){const ip=d3.geoInterpolate(fr,to);const pts=[];for(let i=0;i<=ARC_STEPS;i++)pts.push(ip(i/ARC_STEPS));return pts;}
-function spawnArc(){const pool=[...CORRIDORS].sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;if(!dotVis(fr)&&!dotVis(to))continue;arcs.push({gp:buildPts(fr,to),h:c.h,p:0});return;}}
+function spawnArc(){const pool=[...CORRIDORS].sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;if(!vis(fr)&&!vis(to))continue;arcs.push({gp:buildPts(fr,to),h:c.h,p:0});return;}}
 function drawArc(a){
-  const sp=a.gp.map(ll=>proj(ll)).filter(Boolean); if(sp.length<2)return;
+  const sp=a.gp.map(ll=>proj(ll)).filter(Boolean);if(sp.length<2)return;
   const hd=Math.min(Math.floor(a.p*sp.length),sp.length-1);
   const tl=Math.max(0,Math.floor((a.p-ARC_TAIL)*sp.length));
   if(hd-tl<1)return;
-  let al=1; if(a.p>.82)al=1-(a.p-.82)/.18; al=Math.max(0,Math.min(1,al)); if(!al)return;
+  let al=1;if(a.p>.82)al=1-(a.p-.82)/.18;al=Math.max(0,Math.min(1,al));if(!al)return;
   const col=a.h?'255,107,53':'0,212,255';
   ctx.save();
   ctx.beginPath();ctx.moveTo(sp[tl][0],sp[tl][1]);for(let i=tl+1;i<=hd;i++)ctx.lineTo(sp[i][0],sp[i][1]);
@@ -645,7 +739,6 @@ function drawArc(a){
   if(a.p<.08){const pu=1-a.p/.08;ctx.beginPath();ctx.arc(sp[0][0],sp[0][1],7*pu+1,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al*.25*pu})`;ctx.fill();ctx.beginPath();ctx.arc(sp[0][0],sp[0][1],2.5,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al*.9})`;ctx.fill();}
   ctx.restore();
 }
-
 function draw(){
   ctx.clearRect(0,0,W,H);
   const sc=getS(),cx=W/2,cy=H/2;
@@ -657,18 +750,17 @@ function draw(){
   ctx.beginPath();pg(d3.geoGraticule().step([20,20])());ctx.strokeStyle='rgba(40,80,140,.2)';ctx.lineWidth=.4;ctx.stroke();
   if(world){topojson.feature(world,world.objects.countries).features.forEach(f=>{ctx.beginPath();pg(f);if(selId!==null&&parseInt(f.id)===selId){ctx.fillStyle='#0d4a9a';ctx.strokeStyle='#4ab0ff';ctx.lineWidth=1.2;}else{ctx.fillStyle='#0d2238';ctx.strokeStyle='#1a3a55';ctx.lineWidth=.4;}ctx.fill();ctx.stroke();});}
   spawnTick++;if(spawnTick%38===0&&arcs.length<MAX_ARCS)spawnArc();
-  arcs.forEach(a=>{a.p+=ARC_SPEED;drawArc(a);});
-  arcs=arcs.filter(a=>a.p<1.02);
+  arcs.forEach(a=>{a.p+=ARC_SPEED;drawArc(a);});arcs=arcs.filter(a=>a.p<1.02);
   ctx.restore();
   ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.strokeStyle='rgba(58,154,255,.15)';ctx.lineWidth=1.5;ctx.stroke();
   requestAnimationFrame(draw);
 }
-
-window.addEventListener('resize', resize);
-resize();
+window.addEventListener('resize',resize);resize();
 fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
-  .then(r=>r.json())
-  .then(w=>{world=w;countries=topojson.feature(world,world.objects.countries).features;draw();for(let i=0;i<6;i++)setTimeout(spawnArc,i*300);});
+  .then(r=>r.json()).then(w=>{
+    world=w;countries=topojson.feature(world,world.objects.countries).features;
+    draw();for(let i=0;i<6;i++)setTimeout(spawnArc,i*300);
+  });
 </script>
 </body>
 </html>
