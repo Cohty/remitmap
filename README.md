@@ -1,2 +1,2 @@
 # remitmap
-Interactive animated globe with remittance in/out flows, leading MNO and top 3 remittance providers with rates.
+Interactive globe showing the leading mobile network operator, live remittance flows, and the top 3 cheapest money transfer providers for every country in the world.
