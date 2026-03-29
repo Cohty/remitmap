@@ -34,7 +34,7 @@ body{background:#030810;font-family:'Syne',sans-serif;color:#e8f4ff;overflow:hid
 #app{position:relative;width:100vw;height:100vh}
 button{font-family:inherit;cursor:pointer;border:none;background:none}
 #stars{position:absolute;inset:0;pointer-events:none}
-#globe-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
+#globe-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none;will-change:transform}
 #globe-canvas.grabbing{cursor:grabbing}
 
 /* ══ TOPBAR ══ */
@@ -1229,19 +1229,43 @@ const canvas=g('globe-canvas'),ctx=canvas.getContext('2d');
 let W,H,proj,pg,world,countries;
 let rot=[15,-25],selId=null,dragging=false,lastMX,lastMY,didDrag,pinchDist=null;
 let baseScale,curScale=1;
-const MIN_S=.4,MAX_S=6,MAX_ARCS=16;
+const MIN_S=.4,MAX_S=6;
+let MAX_ARCS=16;          // adaptive — reduced on slow hardware
 let arcs=[],spawnTick=0;
+
+// ── GPU optimisation vars ─────────────────────────────────────────────────
+// Dirty flag: skip full redraw when globe is static and no arcs are animating
+let dirty=true;           // start dirty so first frame always draws
+let lastInteraction=0;    // timestamp of last user interaction
+const IDLE_MS=150;        // ms of no interaction before we can skip redraws
+
+// FPS tracker: sample frame times, throttle arc count on slow hardware
+let fpsFrames=0,fpsSampleStart=performance.now(),measuredFPS=60,fpsChecked=false;
+
+// Device pixel ratio: cap at 1.5 — on 4K/Retina this cuts pixel work by ~50%
+const DPR=Math.min(window.devicePixelRatio||1,1.5);
+
 function getS(){return baseScale*curScale;}
-function rebP(){proj=d3.geoOrthographic().scale(getS()).translate([W/2,H/2]).rotate(rot).clipAngle(90);pg=d3.geoPath(proj,ctx);}
-function resize(){W=window.innerWidth;H=window.innerHeight;canvas.width=W;canvas.height=H;baseScale=Math.min(W,H)*.42;rebP();}
-function zoom(f){curScale=Math.max(MIN_S,Math.min(MAX_S,curScale*f));rebP();}
+function rebP(){proj=d3.geoOrthographic().scale(getS()).translate([W/2,H/2]).rotate(rot).clipAngle(90);pg=d3.geoPath(proj,ctx);dirty=true;}
+function resize(){
+  W=window.innerWidth;H=window.innerHeight;
+  // Physical pixels capped at 1.5× DPR — CSS size stays 100% width/height
+  canvas.width=Math.round(W*DPR);
+  canvas.height=Math.round(H*DPR);
+  canvas.style.width=W+'px';
+  canvas.style.height=H+'px';
+  baseScale=Math.min(W,H)*.42;
+  rebP();
+  dirty=true;
+}
+function zoom(f){curScale=Math.max(MIN_S,Math.min(MAX_S,curScale*f));rebP();dirty=true;lastInteraction=performance.now();}
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.1:.91);},{passive:false});
 g('zoom-in').onclick=()=>zoom(1.2);g('zoom-out').onclick=()=>zoom(.83);
 canvas.addEventListener('mousedown',e=>{dragging=true;lastMX=e.clientX;lastMY=e.clientY;didDrag=false;canvas.classList.add('grabbing');});
-window.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-lastMX,dy=e.clientY-lastMY;if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;const s=.28/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=e.clientX;lastMY=e.clientY;});
+window.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-lastMX,dy=e.clientY-lastMY;if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;const s=.28/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=e.clientX;lastMY=e.clientY;dirty=true;lastInteraction=performance.now();});
 window.addEventListener('mouseup',e=>{canvas.classList.remove('grabbing');if(!dragging)return;dragging=false;if(!didDrag)hClick(e.clientX,e.clientY);});
 canvas.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===2){dragging=false;const t0=e.touches[0],t1=e.touches[1];pinchDist=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);}else{const t=e.touches[0];dragging=true;lastMX=t.clientX;lastMY=t.clientY;didDrag=false;pinchDist=null;}},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===2&&pinchDist!==null){const t0=e.touches[0],t1=e.touches[1];const d=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);zoom(d/pinchDist);pinchDist=d;}else if(dragging&&e.touches.length===1){const t=e.touches[0];const dx=t.clientX-lastMX,dy=t.clientY-lastMY;if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;const s=.35/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=t.clientX;lastMY=t.clientY;}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===2&&pinchDist!==null){const t0=e.touches[0],t1=e.touches[1];const d=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);zoom(d/pinchDist);pinchDist=d;}else if(dragging&&e.touches.length===1){const t=e.touches[0];const dx=t.clientX-lastMX,dy=t.clientY-lastMY;if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;const s=.35/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=t.clientX;lastMY=t.clientY;dirty=true;lastInteraction=performance.now();}},{passive:false});
 canvas.addEventListener('touchend',e=>{if(e.touches.length<2)pinchDist=null;if(e.touches.length===0){dragging=false;if(!didDrag&&e.changedTouches.length>0){const t=e.changedTouches[0];hClick(t.clientX,t.clientY);}}});
 function dsq(a,b){const dx=a[0]-b[0],dy=a[1]-b[1];return dx*dx+dy*dy;}
 function hClick(x,y){if(!countries)return;const cx=W/2,cy=H/2,sc=getS(),dx=x-cx,dy=y-cy;if(dx*dx+dy*dy>sc*sc){closePanel();return;}const inv=proj.invert([x,y]);if(!inv){closePanel();return;}for(const f of countries){try{if(d3.geoContains(f,inv)){const id=parseInt(f.id);const n=NAMES[id];if(n){selectCountry(id,n);return;}}}catch(_){}}const thr=Math.max(2.5,8/curScale);let best=null,bestD=thr*thr;for(const[n,[lon,lat]]of Object.entries(CENS)){const d=dsq(inv,[lon,lat]);if(d<bestD){bestD=d;best=n;}}if(best){for(const[id,n]of Object.entries(NAMES)){if(n===best){selectCountry(parseInt(id),best);return;}}}closePanel();}
@@ -1249,11 +1273,92 @@ function vis(ll){const phi=(90-ll[1])*Math.PI/180,theta=(ll[0]+180)*Math.PI/180;
 function buildPts(fr,to){const ip=d3.geoInterpolate(fr,to);const pts=[];for(let i=0;i<=80;i++)pts.push(ip(i/80));return pts;}
 function spawnArc(){const weighted=[];CORRIDORS.forEach(c=>{for(let i=0;i<c.tier;i++)weighted.push(c);});const pool=[...weighted].sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;if(!vis(fr)&&!vis(to))continue;const t=TIER[c.tier];arcs.push({gp:buildPts(fr,to),tier:c.tier,t,p:0});return;}}
 function drawArc(a){const{gp,t,p}=a;const sp=gp.map(ll=>proj(ll)).filter(Boolean);if(sp.length<2)return;const total=sp.length,hd=Math.min(Math.floor(p*total),total-1),tl=Math.max(0,Math.floor((p-t.tailLen)*total));if(hd-tl<1)return;let al=1;if(p>.80)al=1-(p-.80)/.20;al=Math.max(0,Math.min(1,al))*t.opacity;if(al<=.01)return;const col=t.color;ctx.save();if(t.glow>0){ctx.beginPath();ctx.moveTo(sp[tl][0],sp[tl][1]);for(let i=tl+1;i<=hd;i++)ctx.lineTo(sp[i][0],sp[i][1]);ctx.strokeStyle=`rgba(${col},${al*.15})`;ctx.lineWidth=t.glow;ctx.lineCap='round';ctx.stroke();}const seg=hd-tl;for(let i=tl;i<hd;i++){const frac=(i-tl)/seg,aa=al*(.12+frac*.88);ctx.beginPath();ctx.moveTo(sp[i][0],sp[i][1]);ctx.lineTo(sp[i+1][0],sp[i+1][1]);ctx.strokeStyle=`rgba(${col},${aa})`;ctx.lineWidth=t.core*(.3+frac*.7);ctx.lineCap='round';ctx.stroke();}ctx.beginPath();ctx.arc(sp[hd][0],sp[hd][1],t.dot,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al})`;ctx.fill();if(p<.10){const pu=1-p/.10;ctx.beginPath();ctx.arc(sp[0][0],sp[0][1],8*pu+1,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al*.22*pu})`;ctx.fill();ctx.beginPath();ctx.arc(sp[0][0],sp[0][1],t.dot*.8,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al*.85})`;ctx.fill();}ctx.restore();}
-function draw(){ctx.clearRect(0,0,W,H);const sc=getS(),cx=W/2,cy=H/2;const ag=ctx.createRadialGradient(cx,cy,sc*.88,cx,cy,sc*1.18);ag.addColorStop(0,'rgba(20,70,160,.13)');ag.addColorStop(1,'rgba(0,0,0,0)');ctx.beginPath();ctx.arc(cx,cy,sc*1.18,0,Math.PI*2);ctx.fillStyle=ag;ctx.fill();ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.fillStyle='#040d1e';ctx.fill();ctx.save();ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.clip();ctx.beginPath();pg(d3.geoGraticule().step([20,20])());ctx.strokeStyle='rgba(40,80,140,.2)';ctx.lineWidth=.4;ctx.stroke();if(world){topojson.feature(world,world.objects.countries).features.forEach(f=>{ctx.beginPath();pg(f);if(selId!==null&&parseInt(f.id)===selId){ctx.fillStyle='#0d4a9a';ctx.strokeStyle='#4ab0ff';ctx.lineWidth=1.2;}else{ctx.fillStyle='#0d2238';ctx.strokeStyle='#1a3a55';ctx.lineWidth=.4;}ctx.fill();ctx.stroke();});}const sorted=[...arcs].sort((a,b)=>a.tier-b.tier);sorted.forEach(a=>{a.p+=a.t.speed;drawArc(a);});arcs=arcs.filter(a=>a.p<1.05);spawnTick++;const megaCount=arcs.filter(a=>a.tier===4).length;if(arcs.length<MAX_ARCS||(megaCount<2&&arcs.length<MAX_ARCS+2))if(spawnTick%28===0)spawnArc();ctx.restore();ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.strokeStyle='rgba(58,154,255,.15)';ctx.lineWidth=1.5;ctx.stroke();requestAnimationFrame(draw);}
+// Pre-build graticule once — no need to recreate every frame
+let graticule=null;
+
+function draw(ts){
+  requestAnimationFrame(draw);
+
+  // ── FPS sampling (first 3 seconds) — auto-throttle arcs on slow hardware ──
+  if(!fpsChecked){
+    fpsFrames++;
+    if(ts-fpsSampleStart>3000){
+      measuredFPS=fpsFrames/3;
+      // Below 40fps: reduce max arcs to ease CPU load
+      if(measuredFPS<40) MAX_ARCS=8;
+      else if(measuredFPS<50) MAX_ARCS=12;
+      fpsChecked=true;
+    }
+  }
+
+  // ── Dirty check: arcs always need redrawing; static globe can skip ─────────
+  const hasArcs=arcs.length>0;
+  const recentInteraction=performance.now()-lastInteraction<IDLE_MS;
+  if(!dirty&&!hasArcs&&!recentInteraction){return;}// nothing changed — skip frame
+
+  dirty=false;
+  if(hasArcs)dirty=true; // arcs are animating — stay dirty
+
+  // ── Scale ctx for DPR once — everything else uses logical (CSS) coords ─────
+  const sc=getS(),cx=W/2,cy=H/2;
+  ctx.save();
+  ctx.scale(DPR,DPR);
+
+  ctx.clearRect(0,0,W,H);
+
+  // Atmosphere glow
+  const ag=ctx.createRadialGradient(cx,cy,sc*.88,cx,cy,sc*1.18);
+  ag.addColorStop(0,'rgba(20,70,160,.13)');ag.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath();ctx.arc(cx,cy,sc*1.18,0,Math.PI*2);ctx.fillStyle=ag;ctx.fill();
+
+  // Globe base
+  ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.fillStyle='#040d1e';ctx.fill();
+
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.clip();
+
+  // Graticule (build once, reuse)
+  if(!graticule)graticule=d3.geoGraticule().step([20,20])();
+  ctx.beginPath();pg(graticule);
+  ctx.strokeStyle='rgba(40,80,140,.2)';ctx.lineWidth=.4;ctx.stroke();
+
+  // Countries
+  if(world){
+    topojson.feature(world,world.objects.countries).features.forEach(f=>{
+      ctx.beginPath();pg(f);
+      if(selId!==null&&parseInt(f.id)===selId){
+        ctx.fillStyle='#0d4a9a';ctx.strokeStyle='#4ab0ff';ctx.lineWidth=1.2;
+      }else{
+        ctx.fillStyle='#0d2238';ctx.strokeStyle='#1a3a55';ctx.lineWidth=.4;
+      }
+      ctx.fill();ctx.stroke();
+    });
+  }
+
+  // Arcs (drawn low→high tier so MEGA renders on top)
+  const sorted=[...arcs].sort((a,b)=>a.tier-b.tier);
+  sorted.forEach(a=>{a.p+=a.t.speed;drawArc(a);});
+  arcs=arcs.filter(a=>a.p<1.05);
+
+  // Spawn arcs — less frequently on throttled hardware
+  spawnTick++;
+  const spawnInterval=MAX_ARCS<=8?42:28;
+  const megaCount=arcs.filter(a=>a.tier===4).length;
+  if(arcs.length<MAX_ARCS||(megaCount<2&&arcs.length<MAX_ARCS+2)){
+    if(spawnTick%spawnInterval===0)spawnArc();
+  }
+
+  ctx.restore();
+
+  // Globe rim
+  ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);
+  ctx.strokeStyle='rgba(58,154,255,.15)';ctx.lineWidth=1.5;ctx.stroke();
+
+  ctx.restore(); // restore DPR scale
+}
 window.addEventListener('resize',resize);resize();
 fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
   .then(r=>r.json()).then(w=>{
-    world=w;countries=topojson.feature(world,world.objects.countries).features;draw();
+    world=w;countries=topojson.feature(world,world.objects.countries).features;requestAnimationFrame(draw);
     [4,4,3,3,2,2,1].forEach((tier,i)=>{setTimeout(()=>{const pool=CORRIDORS.filter(c=>c.tier===tier).sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;const t=TIER[c.tier];arcs.push({gp:buildPts(fr,to),tier:c.tier,t,p:0});break;}},i*280);});
   });
 </script>
