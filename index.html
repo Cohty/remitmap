@@ -14,71 +14,34 @@
 body{background:#030810;font-family:'Syne',sans-serif;color:#e8f4ff;overflow:hidden;height:100vh;width:100vw}
 #app{position:relative;width:100vw;height:100vh}
 button{font-family:inherit;cursor:pointer;border:none;background:none}
-
-/* ── CANVAS ── */
 #stars{position:absolute;inset:0;pointer-events:none}
 #globe-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
 #globe-canvas.grabbing{cursor:grabbing}
 
-/* ════════════════════════════════════
-   TOP BAR
-════════════════════════════════════ */
-#topbar{
-  position:absolute;top:0;left:0;right:0;height:72px;
-  padding:0 20px;display:flex;align-items:center;justify-content:space-between;
-  z-index:25;pointer-events:none;
-  background:linear-gradient(to bottom,rgba(3,8,16,.97) 65%,transparent);
-}
+/* ── TOPBAR ── */
+#topbar{position:absolute;top:0;left:0;right:0;height:72px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:25;pointer-events:none;background:linear-gradient(to bottom,rgba(3,8,16,.97) 65%,transparent)}
 #tb-left h1{font-size:13px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
 #tb-left p{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.07em;margin-top:2px}
 #tb-right{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:#00e5a0;letter-spacing:.1em}
 #live-dot{width:7px;height:7px;border-radius:50%;background:#00e5a0;animation:pdot 2s infinite;flex-shrink:0}
 @keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
-
-/* Global counter */
 #global-counter{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;white-space:nowrap}
 #gc-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;color:#7aa8cc;text-transform:uppercase;margin-bottom:3px}
 #gc-value{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:#00e5a0;letter-spacing:.03em;line-height:1;text-shadow:0 0 24px rgba(0,229,160,.35)}
 #gc-sub{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;opacity:.55;margin-top:4px;letter-spacing:.09em}
-
-/* Status */
 #data-status{position:absolute;top:76px;right:20px;z-index:25;pointer-events:none;display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:8px}
 #sdot{width:5px;height:5px;border-radius:50%;background:#555;flex-shrink:0;transition:background .4s}
 #sdot.live{background:#00e5a0}#sdot.cached{background:#ffa500}#sdot.offline{background:#ff4444}
 #stxt{color:#7aa8cc}
 
-/* ════════════════════════════════════
-   FLAGS — use jsdelivr flag-icons SVG
-   Reliable on all platforms/browsers
-════════════════════════════════════ */
-.flag-img{
-  border-radius:2px;object-fit:cover;display:block;flex-shrink:0;
-  background:rgba(58,154,255,.1);
-}
-.flag-img.flag-sm{width:20px;height:14px}
-.flag-img.flag-md{width:28px;height:19px}
-.flag-img.flag-lg{width:44px;height:30px}
+/* ── FLAGS ── */
+.flag-img{border-radius:2px;object-fit:cover;display:block;flex-shrink:0;background:rgba(58,154,255,.08)}
+.flag-sm{width:20px;height:14px}.flag-md{width:28px;height:19px}.flag-lg{width:44px;height:30px}
 
-/* ════════════════════════════════════
-   FX TICKER — desktop left panel
-════════════════════════════════════ */
-#fx-panel{
-  position:absolute;left:0;top:72px;bottom:52px;width:168px;
-  background:rgba(3,9,22,.9);border-right:.5px solid rgba(58,154,255,.16);
-  backdrop-filter:blur(24px);z-index:20;display:flex;flex-direction:column;
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-}
+/* ── FX PANEL (desktop) ── */
+#fx-panel{position:absolute;left:0;top:72px;bottom:52px;width:168px;background:rgba(3,9,22,.9);border-right:.5px solid rgba(58,154,255,.16);backdrop-filter:blur(24px);z-index:20;display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 #fx-panel.fx-hidden{transform:translateX(-168px)}
-
-/* Desktop collapse tab */
-#fx-collapse-tab{
-  position:absolute;right:-22px;top:50%;transform:translateY(-50%);
-  width:22px;height:52px;
-  background:rgba(3,9,22,.92);border:.5px solid rgba(58,154,255,.18);border-left:none;
-  border-radius:0 6px 6px 0;cursor:pointer;z-index:21;
-  display:flex;align-items:center;justify-content:center;
-  color:#3a9aff;font-size:11px;transition:background .15s;
-}
+#fx-collapse-tab{position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:22px;height:52px;background:rgba(3,9,22,.92);border:.5px solid rgba(58,154,255,.18);border-left:none;border-radius:0 6px 6px 0;cursor:pointer;z-index:21;display:flex;align-items:center;justify-content:center;color:#3a9aff;font-size:11px;transition:background .15s}
 #fx-collapse-tab:hover{background:rgba(20,50,100,.95)}
 #fx-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px}
 #fx-title{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;color:#3a9aff;letter-spacing:.14em}
@@ -93,50 +56,22 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .fx-rate.loaded{color:#a0c8e8}
 #fx-footer{font-family:'Space Mono',monospace;font-size:6.5px;color:#7aa8cc;opacity:.45;padding:5px 12px;border-top:.5px solid rgba(58,154,255,.08);text-align:center}
 
-/* ════════════════════════════════════
-   MOBILE BOTTOM NAV BAR
-════════════════════════════════════ */
-#mobile-nav{
-  display:none;
-  position:absolute;bottom:0;left:0;right:0;height:56px;z-index:30;
-  background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);
-  backdrop-filter:blur(20px);
-  flex-direction:row;align-items:stretch;
-}
-.mob-btn{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.06em;
-  color:#7aa8cc;padding:8px 4px;transition:all .15s;
-  border:none;background:none;
-}
+/* ── MOBILE NAV ── */
+#mobile-nav{display:none;position:absolute;bottom:0;left:0;right:0;height:56px;z-index:30;background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);backdrop-filter:blur(20px);flex-direction:row;align-items:stretch}
+.mob-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.06em;color:#7aa8cc;padding:8px 4px;transition:all .15s;border:none;background:none}
 .mob-btn.active{color:#3a9aff;background:rgba(58,154,255,.08)}
 .mob-btn:active{background:rgba(58,154,255,.15)}
 .mob-btn-icon{font-size:18px;line-height:1}
 .mob-divider{width:.5px;background:rgba(58,154,255,.18);margin:10px 0}
 
-/* Mobile FX sheet */
-#fx-sheet{
-  display:none;
-  position:absolute;bottom:56px;left:0;right:0;z-index:28;
-  background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);
-  backdrop-filter:blur(24px);
-  max-height:55vh;flex-direction:column;
-  transform:translateY(100%);
-  transition:transform .3s cubic-bezier(.4,0,.2,1);
-}
+/* ── MOBILE FX SHEET ── */
+#fx-sheet{display:none;position:absolute;bottom:56px;left:0;right:0;z-index:28;background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);backdrop-filter:blur(24px);max-height:55vh;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
 #fx-sheet.sheet-open{transform:translateY(0)}
-#fx-sheet-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px 8px;border-bottom:.5px solid rgba(58,154,255,.1);flex-shrink:0;
-}
+#fx-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:.5px solid rgba(58,154,255,.1);flex-shrink:0}
 #fx-sheet-title{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#3a9aff;letter-spacing:.14em}
 #fx-sheet-close{color:#7aa8cc;font-size:18px;padding:0 4px}
 #fx-sheet-body{flex:1;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;padding:6px 8px 8px;gap:2px}
-#fx-sheet-body::-webkit-scrollbar{width:2px}
-.fx-sheet-row{
-  display:flex;align-items:center;gap:6px;padding:7px 8px;
-  cursor:pointer;border-radius:6px;transition:background .12s;
-}
+.fx-sheet-row{display:flex;align-items:center;gap:6px;padding:7px 8px;cursor:pointer;border-radius:6px;transition:background .12s}
 .fx-sheet-row:active{background:rgba(58,154,255,.1)}
 .fx-sheet-code{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;color:#e8f4ff;width:32px;flex-shrink:0}
 .fx-sheet-rate{font-family:'Space Mono',monospace;font-size:9px;flex:1;text-align:right}
@@ -144,20 +79,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .fx-sheet-rate:not(.loaded){color:#7aa8cc}
 #fx-sheet-footer{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;opacity:.45;padding:4px 16px 8px;text-align:center;flex-shrink:0}
 
-/* ════════════════════════════════════
-   LEADERBOARD — bottom
-════════════════════════════════════ */
-#leaderboard{
-  position:absolute;bottom:0;left:0;right:0;z-index:20;
-  background:rgba(3,9,22,.93);border-top:.5px solid rgba(58,154,255,.18);
-  backdrop-filter:blur(24px);height:52px;overflow:hidden;
-  transition:height .32s cubic-bezier(.4,0,.2,1);
-}
+/* ── LEADERBOARD ── */
+#leaderboard{position:absolute;bottom:0;left:0;right:0;z-index:20;background:rgba(3,9,22,.93);border-top:.5px solid rgba(58,154,255,.18);backdrop-filter:blur(24px);height:52px;overflow:hidden;transition:height .32s cubic-bezier(.4,0,.2,1)}
 #leaderboard.lb-open{height:280px}
-#lb-header{
-  display:flex;align-items:center;justify-content:space-between;
-  height:52px;padding:0 18px;cursor:pointer;user-select:none;flex-shrink:0;
-}
+#lb-header{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 18px;cursor:pointer;user-select:none;flex-shrink:0}
 #lb-tabs{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;overflow:hidden}
 .lb-tab{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;color:#7aa8cc;padding:5px 9px;border-radius:4px;border:.5px solid transparent;transition:all .15s;white-space:nowrap}
 .lb-tab.active{color:#3a9aff;background:rgba(58,154,255,.09);border-color:rgba(58,154,255,.22)}
@@ -167,10 +92,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #lb-header:hover #lb-toggle{color:#3a9aff}
 #lb-arrow{display:inline-block;transition:transform .32s;font-size:7px}
 #leaderboard.lb-open #lb-arrow{transform:rotate(180deg)}
-
 #lb-body{height:228px;overflow-y:auto;padding:4px 14px 10px;scrollbar-width:thin;scrollbar-color:rgba(58,154,255,.2) transparent}
 #lb-body::-webkit-scrollbar{width:3px}
-#lb-body::-webkit-scrollbar-track{background:transparent}
 #lb-body::-webkit-scrollbar-thumb{background:rgba(58,154,255,.2);border-radius:2px}
 #lb-list{display:flex;flex-direction:column;gap:3px}
 .lb-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;background:rgba(255,255,255,.015);border:.5px solid transparent;transition:all .13s;flex-shrink:0}
@@ -184,44 +107,29 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .lb-bar-track{height:3px;background:rgba(255,255,255,.05);border-radius:2px}
 .lb-bar-fill{height:3px;border-radius:2px;transition:width .5s ease}
 
-/* ════════════════════════════════════
-   FLOATING UI
-════════════════════════════════════ */
+/* ── FLOATING UI ── */
 #zoom-controls{position:absolute;bottom:60px;right:20px;display:flex;flex-direction:column;gap:6px;z-index:22;transition:bottom .32s cubic-bezier(.4,0,.2,1)}
 #app.lb-open #zoom-controls{bottom:288px}
 .zoom-btn{width:30px;height:30px;background:rgba(8,20,46,.88);border:.5px solid rgba(58,154,255,.28)!important;border-radius:7px;color:#7aa8cc;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none}
 .zoom-btn:hover{background:rgba(20,50,110,.95);color:#3a9aff}
 .zoom-btn:active{transform:scale(.9)}
-
 #arc-legend{position:absolute;bottom:60px;left:176px;z-index:22;pointer-events:none;transition:left .3s cubic-bezier(.4,0,.2,1),bottom .32s cubic-bezier(.4,0,.2,1)}
 #app.lb-open #arc-legend{bottom:288px}
 #app.fx-hidden #arc-legend{left:8px}
 .li{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.07em;margin-bottom:5px}
 .ld{border-radius:1px;flex-shrink:0}
-
 #hint{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:8px;color:rgba(122,168,204,.3);letter-spacing:.1em;pointer-events:none;z-index:22;white-space:nowrap;transition:bottom .32s cubic-bezier(.4,0,.2,1)}
 #app.lb-open #hint{bottom:288px}
 #app.lb-open #fx-panel{bottom:280px}
 
-/* ════════════════════════════════════
-   INFO PANEL
-════════════════════════════════════ */
-#info-panel{
-  position:absolute;top:50%;right:20px;transform:translateY(-50%);
-  width:306px;max-height:calc(100vh - 140px);overflow-y:auto;
-  background:rgba(4,12,28,.97);border:.5px solid rgba(58,154,255,.26);
-  border-radius:15px;padding:0;z-index:22;display:none;
-  backdrop-filter:blur(20px);
-  box-shadow:0 0 50px rgba(58,154,255,.07),0 20px 60px rgba(0,0,0,.7);
-  animation:pin .22s cubic-bezier(.34,1.56,.64,1);
-}
+/* ── INFO PANEL ── */
+#info-panel{position:absolute;top:50%;right:20px;transform:translateY(-50%);width:310px;max-height:calc(100vh - 140px);overflow-y:auto;background:rgba(4,12,28,.97);border:.5px solid rgba(58,154,255,.26);border-radius:15px;padding:0;z-index:22;display:none;backdrop-filter:blur(20px);box-shadow:0 0 50px rgba(58,154,255,.07),0 20px 60px rgba(0,0,0,.7);animation:pin .22s cubic-bezier(.34,1.56,.64,1)}
 @keyframes pin{from{opacity:0;transform:translateY(-50%) translateX(12px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
 #info-panel::-webkit-scrollbar{width:3px}
 #info-panel::-webkit-scrollbar-thumb{background:rgba(58,154,255,.18);border-radius:2px}
 #panel-top{padding:15px 15px 0;display:flex;justify-content:space-between;align-items:flex-start}
 #country-identity{display:flex;align-items:center;gap:10px}
 #country-name{font-size:16px;font-weight:700;color:#e8f4ff;margin-top:1px}
-#flag-fallback{width:44px;height:30px;border-radius:3px;background:rgba(58,154,255,.12);border:.5px solid rgba(58,154,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;flex-shrink:0}
 #close-btn{background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.1)!important;border-radius:50%;width:25px;height:25px;color:#7aa8cc;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 #close-btn:hover{background:rgba(255,255,255,.11);color:#e8f4ff}
 #panel-tabs{display:flex;padding:10px 15px 0;gap:4px}
@@ -248,13 +156,94 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .badge-year{background:rgba(58,154,255,.1);border:.5px solid rgba(58,154,255,.2);color:#3a9aff}
 .badge-live{background:rgba(0,229,160,.08);border:.5px solid rgba(0,229,160,.18);color:#00e5a0}
 .badge-base{background:rgba(255,165,0,.08);border:.5px solid rgba(255,165,0,.18);color:#ffa500}
+
+/* ── PROVIDERS TAB ── */
 #mm-label{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#3a9aff;margin-bottom:7px;opacity:.8}
 .mm-box{background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:9px 11px;margin-bottom:10px}
 .mm-lbl{font-family:'Space Mono',monospace;font-size:7.5px;color:#7aa8cc;letter-spacing:.06em;margin-bottom:2px}
 #mm-value{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#e8f4ff}
 #mm-time{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;text-align:right}
 #mm-upd{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;display:none;align-items:center;gap:5px;margin-top:5px}
+
+/* ════════════════════════════════════════════════════════
+   TELCOIN FEATURED CARD
+════════════════════════════════════════════════════════ */
+#telcoin-section{margin-bottom:12px}
+
+.tel-card{
+  border-radius:11px;padding:13px;
+  background:rgba(0,229,255,.04);
+  border:1px solid rgba(0,229,255,.28);
+  box-shadow:0 0 20px rgba(0,229,255,.06), inset 0 0 20px rgba(0,229,255,.03);
+  position:relative;overflow:hidden;
+}
+.tel-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,229,255,.5),transparent);
+}
+
+.tel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.tel-name-row{display:flex;align-items:center;gap:8px}
+.tel-logo{
+  width:28px;height:28px;border-radius:6px;
+  background:linear-gradient(135deg,#00E5FF,#0066FF);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace;font-size:9px;font-weight:700;
+  color:#fff;flex-shrink:0;letter-spacing:-.02em;
+  box-shadow:0 0 10px rgba(0,229,255,.3);
+}
+.tel-name{font-size:14px;font-weight:800;color:#e8f4ff;letter-spacing:.02em}
+.tel-badges{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.tel-badge-best{font-family:'Space Mono',monospace;font-size:7.5px;letter-spacing:.1em;background:rgba(0,229,255,.15);border:.5px solid rgba(0,229,255,.4);border-radius:3px;padding:2px 6px;color:#00E5FF;font-weight:700}
+.tel-badge-type{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.06em;background:rgba(0,102,255,.12);border:.5px solid rgba(0,102,255,.3);border-radius:3px;padding:2px 5px;color:#60a5fa}
+.tel-speed{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;margin-bottom:8px}
+
+/* MNO partner highlight */
+.tel-mno-badge{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,229,255,.08);border:.5px solid rgba(0,229,255,.2);
+  border-radius:6px;padding:5px 8px;margin-bottom:10px;
+}
+.tel-mno-dot{width:6px;height:6px;border-radius:50%;background:#00E5FF;flex-shrink:0;animation:pdot 2s infinite}
+.tel-mno-text{font-family:'Space Mono',monospace;font-size:8px;color:#a0e8ff;letter-spacing:.05em}
+
+/* Stats row */
+.tel-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:10px}
+.tel-stat{background:rgba(0,0,0,.25);border-radius:6px;padding:6px 7px;text-align:center}
+.tel-stat-lbl{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;margin-bottom:2px;letter-spacing:.04em}
+.tel-stat-val{font-size:12px;font-weight:700;color:#00E5FF}
+
+/* Receives row */
+.tel-recv{
+  background:rgba(0,0,0,.2);border-radius:6px;padding:7px 10px;
+  margin-bottom:10px;display:flex;align-items:center;justify-content:center;
+  font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;min-height:28px;
+}
+.tel-recv span.amt{color:#e8f4ff;font-weight:700;margin:0 3px}
+
+/* Savings bar */
+.tel-savings{margin-bottom:10px}
+.tel-savings-label{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.06em;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center}
+.tel-savings-highlight{color:#00E5FF;font-weight:700}
+.tel-bar-wrap{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;position:relative}
+.tel-bar-tel{height:100%;border-radius:3px;background:linear-gradient(90deg,#00E5FF,#0066FF);transition:width .6s ease}
+.tel-bar-trad{position:absolute;top:0;left:0;height:100%;border-radius:3px;background:rgba(255,165,0,.35);transition:width .6s ease}
+.tel-bar-labels{display:flex;justify-content:space-between;margin-top:3px;font-family:'Space Mono',monospace;font-size:7px}
+.tel-bar-l{color:#00E5FF}.tel-bar-r{color:#ffa500}
+
+/* CTA */
+.tel-cta{display:block;text-align:center;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;color:#030810;background:linear-gradient(135deg,#00E5FF,#0066FF);padding:8px;border-radius:7px;text-decoration:none;font-weight:700;transition:opacity .15s;margin-bottom:7px;box-shadow:0 4px 14px rgba(0,229,255,.25)}
+.tel-cta:hover{opacity:.88}
+.tel-note{font-family:'Space Mono',monospace;font-size:7.5px;color:#7aa8cc;line-height:1.55;text-align:center;opacity:.75}
+
+/* Divider */
+.prov-divider{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.prov-divider-line{flex:1;height:.5px;background:rgba(255,255,255,.08)}
+.prov-divider-text{font-family:'Space Mono',monospace;font-size:7.5px;color:#7aa8cc;letter-spacing:.1em;white-space:nowrap;opacity:.7}
+
+/* Standard provider cards */
 .prov-card{border-radius:9px;padding:10px;margin-bottom:7px;border:.5px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);transition:background .12s}
+.prov-card:last-child{margin-bottom:0}
 .prov-card:hover{background:rgba(255,255,255,.04)}
 .prov-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .prov-left{display:flex;align-items:center;gap:6px}
@@ -280,53 +269,31 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{width:8px;height:8px;border:1.5px solid rgba(58,154,255,.15);border-top-color:#3a9aff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
 
-/* ════════════════════════════════════
-   MOBILE OVERRIDES (≤680px)
-════════════════════════════════════ */
+/* ── RESPONSIVE ── */
 @media(max-width:680px){
-  /* Hide desktop FX panel and its tab */
   #fx-panel,#fx-collapse-tab{display:none!important}
-  /* Show mobile nav and FX sheet */
   #mobile-nav{display:flex}
   #fx-sheet{display:flex}
-  /* Legend repositioned */
   #arc-legend{left:8px!important;bottom:66px}
   #app.lb-open #arc-legend{bottom:296px}
-  /* Zoom repositioned */
   #zoom-controls{bottom:66px;right:14px}
   #app.lb-open #zoom-controls{bottom:296px}
-  /* Hint */
   #hint{display:none}
-  /* Counter smaller on mobile */
   #gc-value{font-size:20px}
   #gc-sub{font-size:7px}
-  /* Leaderboard on mobile */
   #leaderboard{bottom:56px}
   #leaderboard.lb-open{height:52vh}
   #lb-body{height:calc(52vh - 52px)}
   #lb-year-tag{display:none}
   .lb-info,.lb-bar{display:none}
-  /* Info panel full width on mobile */
-  #info-panel{
-    left:8px;right:8px;width:auto;
-    top:auto;bottom:66px;transform:none;
-    max-height:calc(100vh - 160px);
-    animation:pin-mob .22s cubic-bezier(.34,1.56,.64,1);
-  }
+  #info-panel{left:8px;right:8px;width:auto;top:auto;bottom:66px;transform:none;max-height:calc(100vh - 160px);animation:pin-mob .22s cubic-bezier(.34,1.56,.64,1)}
   #app.lb-open #info-panel{bottom:calc(52vh + 8px)}
   @keyframes pin-mob{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  /* Data status under topbar */
   #data-status{font-size:7px;top:74px;right:10px}
-  /* Top bar on mobile — hide sub-text */
   #tb-left p{display:none}
-  #tb-left h1{font-size:12px}
 }
 @media(min-width:681px){
   #mobile-nav,#fx-sheet{display:none!important}
-}
-@media(max-height:500px) and (max-width:680px){
-  #leaderboard.lb-open{height:45vh}
-  #lb-body{height:calc(45vh - 52px)}
 }
 </style>
 </head>
@@ -335,12 +302,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <canvas id="stars"></canvas>
   <canvas id="globe-canvas"></canvas>
 
-  <!-- TOP BAR -->
   <div id="topbar">
-    <div id="tb-left">
-      <h1>RemitMap</h1>
-      <p>Global MNO &amp; Remittance Intelligence · Click any country</p>
-    </div>
+    <div id="tb-left"><h1>RemitMap</h1><p>Global MNO &amp; Remittance Intelligence · Click any country</p></div>
     <div id="global-counter">
       <div id="gc-label">REMITTANCES SENT TODAY (EST.)</div>
       <div id="gc-value">$0.00B</div>
@@ -352,16 +315,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
   <!-- DESKTOP FX PANEL -->
   <div id="fx-panel">
-    <div id="fx-head">
-      <span id="fx-title">FX LIVE</span>
-    </div>
+    <div id="fx-head"><span id="fx-title">FX LIVE</span></div>
     <div id="fx-sub-label">USD MID-MARKET</div>
     <div id="fx-list"></div>
     <div id="fx-footer">—</div>
     <div id="fx-collapse-tab" onclick="toggleFX()">›</div>
   </div>
 
-  <!-- MOBILE FX SHEET (slides up from bottom) -->
+  <!-- MOBILE FX SHEET -->
   <div id="fx-sheet">
     <div id="fx-sheet-head">
       <span id="fx-sheet-title">FX LIVE · USD MID-MARKET</span>
@@ -371,13 +332,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <div id="fx-sheet-footer">—</div>
   </div>
 
-  <!-- ZOOM -->
   <div id="zoom-controls">
     <button class="zoom-btn" id="zoom-in">+</button>
     <button class="zoom-btn" id="zoom-out">−</button>
   </div>
 
-  <!-- ARC LEGEND -->
   <div id="arc-legend">
     <div class="li"><div class="ld" style="width:18px;height:3.5px;background:#fff;box-shadow:0 0 6px #fff;opacity:.9"></div>MEGA  &gt;$30B</div>
     <div class="li"><div class="ld" style="width:14px;height:2.5px;background:#ff6b35;box-shadow:0 0 4px #ff6b35"></div>MAJOR $10–30B</div>
@@ -423,9 +382,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         </div>
         <div id="mm-upd"><span class="spin"></span><span style="font-size:8px;margin-left:4px">Fetching live rate…</span></div>
       </div>
-      <div class="slabel">TOP 3 CHEAPEST PROVIDERS</div>
+      <!-- Telcoin featured section -->
+      <div id="telcoin-section"></div>
+      <!-- Traditional providers -->
       <div id="providers-list"></div>
-      <div class="disc">Rates for $200 USD · World Bank RPW Q1 2025 · Confirm on provider site before sending</div>
+      <div class="disc">Rates for $200 USD · World Bank RPW Q1 2025 · Confirm on provider site before sending · Telcoin rates: telcoin.network</div>
     </div>
   </div>
 
@@ -442,167 +403,120 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <div id="lb-body"><div id="lb-list"></div></div>
   </div>
 
-  <!-- MOBILE BOTTOM NAV -->
+  <!-- MOBILE NAV -->
   <div id="mobile-nav">
     <button class="mob-btn" id="mob-fx-btn" onclick="toggleMobFX()">
-      <span class="mob-btn-icon">💱</span>
-      <span>FX RATES</span>
+      <span class="mob-btn-icon">💱</span><span>FX RATES</span>
     </button>
     <div class="mob-divider"></div>
     <button class="mob-btn" id="mob-lb-btn" onclick="toggleLB()">
-      <span class="mob-btn-icon">🏆</span>
-      <span>LEADERBOARD</span>
+      <span class="mob-btn-icon">🏆</span><span>LEADERBOARD</span>
     </button>
     <div class="mob-divider"></div>
-    <button class="mob-btn" id="mob-zoom-in" onclick="zoom(1.25)">
-      <span class="mob-btn-icon" style="font-size:22px;font-family:monospace">+</span>
-      <span>ZOOM IN</span>
+    <button class="mob-btn" onclick="zoom(1.25)">
+      <span class="mob-btn-icon" style="font-size:22px;font-family:monospace">+</span><span>ZOOM IN</span>
     </button>
     <div class="mob-divider"></div>
-    <button class="mob-btn" id="mob-zoom-out" onclick="zoom(0.8)">
-      <span class="mob-btn-icon" style="font-size:22px;font-family:monospace">−</span>
-      <span>ZOOM OUT</span>
+    <button class="mob-btn" onclick="zoom(0.8)">
+      <span class="mob-btn-icon" style="font-size:22px;font-family:monospace">−</span><span>ZOOM OUT</span>
     </button>
   </div>
-
-</div><!-- #app -->
+</div>
 
 <script>
-// ── FLAG HELPER — jsdelivr flag-icons SVG (works on all platforms/browsers) ──
-// URL: https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/{iso2}.svg
-function flagURL(iso2){
-  return `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${iso2.toLowerCase()}.svg`;
-}
-function makeFlag(iso2, sizeClass){
-  if(!iso2) return `<div class="flag-img ${sizeClass}" style="display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc">?</div>`;
-  return `<img class="flag-img ${sizeClass}" src="${flagURL(iso2)}" alt="${iso2}" onerror="this.style.opacity='0'">`;
-}
+// ── FLAG HELPER ───────────────────────────────────────────────────────────────
+function flagURL(iso2){ return `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${iso2.toLowerCase()}.svg`; }
+function makeFlag(iso2,cls){ return iso2?`<img class="flag-img ${cls}" src="${flagURL(iso2)}" alt="${iso2}" onerror="this.style.opacity='0'">`:`<div class="flag-img ${cls}" style="display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc">?</div>`; }
 
 // ── ISO MAPS ──────────────────────────────────────────────────────────────────
 const NAMES={4:'Afghanistan',8:'Albania',12:'Algeria',24:'Angola',32:'Argentina',36:'Australia',40:'Austria',50:'Bangladesh',56:'Belgium',64:'Bhutan',68:'Bolivia',76:'Brazil',100:'Bulgaria',104:'Myanmar',116:'Cambodia',120:'Cameroon',124:'Canada',144:'Sri Lanka',152:'Chile',156:'China',158:'Taiwan',170:'Colombia',178:'Republic of Congo',180:'DR Congo',188:'Costa Rica',191:'Croatia',192:'Cuba',196:'Cyprus',203:'Czech Republic',208:'Denmark',214:'Dominican Republic',218:'Ecuador',222:'El Salvador',231:'Ethiopia',238:'Falkland Islands',246:'Finland',250:'France',266:'Gabon',276:'Germany',288:'Ghana',300:'Greece',320:'Guatemala',324:'Guinea',332:'Haiti',340:'Honduras',348:'Hungary',356:'India',360:'Indonesia',364:'Iran',368:'Iraq',372:'Ireland',376:'Israel',380:'Italy',388:'Jamaica',392:'Japan',398:'Kazakhstan',400:'Jordan',404:'Kenya',408:'North Korea',410:'South Korea',414:'Kuwait',418:'Laos',422:'Lebanon',426:'Lesotho',430:'Liberia',434:'Libya',440:'Lithuania',442:'Luxembourg',450:'Madagascar',454:'Malawi',458:'Malaysia',466:'Mali',484:'Mexico',496:'Mongolia',504:'Morocco',508:'Mozambique',516:'Namibia',524:'Nepal',528:'Netherlands',554:'New Zealand',558:'Nicaragua',562:'Niger',566:'Nigeria',578:'Norway',586:'Pakistan',591:'Panama',598:'Papua New Guinea',604:'Peru',608:'Philippines',616:'Poland',620:'Portugal',634:'Qatar',642:'Romania',643:'Russia',646:'Rwanda',682:'Saudi Arabia',686:'Senegal',694:'Sierra Leone',703:'Slovakia',704:'Vietnam',705:'Slovenia',706:'Somalia',710:'South Africa',716:'Zimbabwe',724:'Spain',729:'Sudan',740:'Suriname',752:'Sweden',756:'Switzerland',760:'Syria',762:'Tajikistan',764:'Thailand',768:'Togo',780:'Trinidad and Tobago',784:'UAE',788:'Tunisia',792:'Turkey',800:'Uganda',804:'Ukraine',818:'Egypt',826:'United Kingdom',834:'Tanzania',840:'United States',858:'Uruguay',860:'Uzbekistan',862:'Venezuela',887:'Yemen',894:'Zambia'};
 const ISO2={'Afghanistan':'AF','Albania':'AL','Algeria':'DZ','Angola':'AO','Argentina':'AR','Australia':'AU','Austria':'AT','Bangladesh':'BD','Belgium':'BE','Bhutan':'BT','Bolivia':'BO','Brazil':'BR','Bulgaria':'BG','Myanmar':'MM','Cambodia':'KH','Cameroon':'CM','Canada':'CA','Sri Lanka':'LK','Chile':'CL','China':'CN','Taiwan':'TW','Colombia':'CO','Republic of Congo':'CG','DR Congo':'CD','Costa Rica':'CR','Croatia':'HR','Cuba':'CU','Cyprus':'CY','Czech Republic':'CZ','Denmark':'DK','Dominican Republic':'DO','Ecuador':'EC','Egypt':'EG','El Salvador':'SV','Ethiopia':'ET','Falkland Islands':'FK','Finland':'FI','France':'FR','Gabon':'GA','Germany':'DE','Ghana':'GH','Greece':'GR','Guatemala':'GT','Guinea':'GN','Haiti':'HT','Honduras':'HN','Hungary':'HU','India':'IN','Indonesia':'ID','Iran':'IR','Iraq':'IQ','Ireland':'IE','Israel':'IL','Italy':'IT','Jamaica':'JM','Japan':'JP','Jordan':'JO','Kazakhstan':'KZ','Kenya':'KE','North Korea':'KP','South Korea':'KR','Kuwait':'KW','Laos':'LA','Lebanon':'LB','Lesotho':'LS','Liberia':'LR','Libya':'LY','Lithuania':'LT','Luxembourg':'LU','Madagascar':'MG','Malawi':'MW','Malaysia':'MY','Mali':'ML','Mexico':'MX','Mongolia':'MN','Morocco':'MA','Mozambique':'MZ','Namibia':'NA','Nepal':'NP','Netherlands':'NL','New Zealand':'NZ','Nicaragua':'NI','Niger':'NE','Nigeria':'NG','Norway':'NO','Pakistan':'PK','Panama':'PA','Papua New Guinea':'PG','Peru':'PE','Philippines':'PH','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO','Russia':'RU','Rwanda':'RW','Saudi Arabia':'SA','Senegal':'SN','Sierra Leone':'SL','Slovakia':'SK','Slovenia':'SI','Somalia':'SO','South Africa':'ZA','Zimbabwe':'ZW','Spain':'ES','Sudan':'SD','Suriname':'SR','Sweden':'SE','Switzerland':'CH','Syria':'SY','Tajikistan':'TJ','Tanzania':'TZ','Thailand':'TH','Togo':'TG','Trinidad and Tobago':'TT','Tunisia':'TN','Turkey':'TR','UAE':'AE','Uganda':'UG','Ukraine':'UA','United Kingdom':'GB','United States':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE','Vietnam':'VN','Yemen':'YE','Zambia':'ZM'};
 const CENS={'Afghanistan':[67.7,33.9],'Albania':[20.2,41.2],'Algeria':[2.6,28.0],'Angola':[17.9,-11.2],'Argentina':[-63.6,-38.4],'Australia':[133.8,-25.3],'Austria':[14.5,47.5],'Bangladesh':[90.4,23.7],'Belgium':[4.5,50.5],'Bhutan':[90.4,27.5],'Bolivia':[-64.9,-16.3],'Brazil':[-51.9,-14.2],'Bulgaria':[25.5,42.7],'Myanmar':[96.7,17.1],'Cambodia':[104.9,12.6],'Cameroon':[12.4,3.9],'Canada':[-96.8,56.1],'Sri Lanka':[80.7,7.9],'Chile':[-71.5,-35.7],'China':[104.2,35.9],'Taiwan':[120.9,23.7],'Colombia':[-74.3,4.1],'Republic of Congo':[15.8,-0.2],'DR Congo':[23.7,-4.0],'Costa Rica':[-83.8,9.7],'Croatia':[16.4,45.1],'Cuba':[-79.5,21.5],'Cyprus':[33.1,35.1],'Czech Republic':[15.5,49.8],'Denmark':[10.0,56.3],'Dominican Republic':[-70.2,18.7],'Ecuador':[-78.1,-1.8],'Egypt':[30.8,26.8],'El Salvador':[-88.9,13.8],'Ethiopia':[40.5,9.1],'Falkland Islands':[-59.5,-51.8],'Finland':[25.7,61.9],'France':[2.2,46.2],'Gabon':[11.6,-0.8],'Germany':[10.5,51.2],'Ghana':[-1.0,7.9],'Greece':[21.8,39.1],'Guatemala':[-90.2,15.8],'Guinea':[-11.3,11.0],'Haiti':[-72.3,18.9],'Honduras':[-86.6,15.2],'Hungary':[19.5,47.2],'India':[78.9,20.6],'Indonesia':[113.9,-0.8],'Iran':[53.7,32.4],'Iraq':[43.7,33.2],'Ireland':[-8.2,53.4],'Israel':[34.9,31.5],'Italy':[12.6,42.5],'Jamaica':[-77.3,18.1],'Japan':[138.3,36.2],'Jordan':[36.2,30.6],'Kazakhstan':[66.9,48.0],'Kenya':[37.9,0.0],'North Korea':[127.5,40.3],'South Korea':[127.8,36.5],'Kuwait':[47.5,29.3],'Laos':[103.9,17.4],'Lebanon':[35.9,33.9],'Lesotho':[28.2,-29.6],'Liberia':[-9.4,6.4],'Libya':[17.2,27.0],'Lithuania':[23.9,55.2],'Luxembourg':[6.1,49.8],'Madagascar':[46.9,-19.4],'Malawi':[34.3,-13.3],'Malaysia':[109.7,4.2],'Mali':[-2.0,17.6],'Mexico':[-102.6,23.6],'Mongolia':[103.8,46.9],'Morocco':[-7.1,31.8],'Mozambique':[35.5,-18.7],'Namibia':[18.5,-22.0],'Nepal':[84.1,28.4],'Netherlands':[5.3,52.1],'New Zealand':[172.0,-42.0],'Nicaragua':[-85.2,12.9],'Niger':[8.1,16.1],'Nigeria':[8.7,9.1],'Norway':[8.5,60.5],'Pakistan':[69.3,30.4],'Panama':[-80.8,8.5],'Papua New Guinea':[143.9,-6.3],'Peru':[-75.0,-9.2],'Philippines':[121.8,12.9],'Poland':[19.1,52.1],'Portugal':[-8.2,39.4],'Qatar':[51.2,25.4],'Romania':[24.9,45.9],'Russia':[99.0,61.5],'Rwanda':[29.9,-1.9],'Saudi Arabia':[45.1,24.2],'Senegal':[-14.5,14.5],'Sierra Leone':[-11.8,8.5],'Slovakia':[19.7,48.7],'Slovenia':[14.8,46.1],'Somalia':[46.2,6.1],'South Africa':[25.1,-29.0],'Zimbabwe':[29.2,-19.0],'Spain':[-3.7,40.2],'Sudan':[30.2,15.9],'Suriname':[-56.0,4.0],'Sweden':[15.2,62.2],'Switzerland':[8.2,46.8],'Syria':[38.3,35.0],'Tajikistan':[71.3,38.9],'Tanzania':[34.9,-6.4],'Thailand':[101.0,15.9],'Togo':[0.8,8.6],'Trinidad and Tobago':[-61.2,10.7],'Tunisia':[9.5,33.9],'Turkey':[35.2,39.1],'UAE':[53.8,24.0],'Uganda':[32.3,1.4],'Ukraine':[31.2,49.0],'United Kingdom':[-3.4,55.4],'United States':[-99.1,38.5],'Uruguay':[-56.0,-32.5],'Uzbekistan':[63.9,41.4],'Venezuela':[-66.6,6.4],'Vietnam':[108.3,14.1],'Yemen':[47.6,15.9],'Zambia':[27.8,-13.1]};
 
-// ── CORRIDORS with heat tiers ─────────────────────────────────────────────────
+// ── CORRIDORS (heat tiers) ────────────────────────────────────────────────────
 const CORRIDORS=[
-  {f:'United States',t:'Mexico',       v:68,  tier:4},
-  {f:'United States',t:'India',        v:54,  tier:4},
-  {f:'UAE',          t:'India',        v:42,  tier:4},
-  {f:'United States',t:'China',        v:35,  tier:4},
-  {f:'Saudi Arabia', t:'India',        v:32,  tier:4},
-  {f:'United States',t:'Philippines',  v:22,  tier:3},
-  {f:'United States',t:'Guatemala',    v:19,  tier:3},
-  {f:'UAE',          t:'Pakistan',     v:18,  tier:3},
-  {f:'Saudi Arabia', t:'Pakistan',     v:16,  tier:3},
-  {f:'United States',t:'Vietnam',      v:14,  tier:3},
-  {f:'United Kingdom',t:'India',       v:15,  tier:3},
-  {f:'Germany',      t:'Turkey',       v:13,  tier:3},
-  {f:'France',       t:'Morocco',      v:11,  tier:3},
-  {f:'Russia',       t:'Uzbekistan',   v:14,  tier:3},
-  {f:'United States',t:'Dominican Republic',v:10.4,tier:3},
-  {f:'United States',t:'Honduras',     v:9.1, tier:3},
-  {f:'United States',t:'Colombia',     v:9.8, tier:3},
-  {f:'Canada',       t:'India',        v:8,   tier:3},
-  {f:'Kuwait',       t:'India',        v:9,   tier:3},
-  {f:'Qatar',        t:'India',        v:8,   tier:3},
-  {f:'United States',t:'El Salvador',  v:8.2, tier:3},
-  {f:'United States',t:'Nigeria',      v:7,   tier:2},
-  {f:'United States',t:'Ecuador',      v:4.4, tier:2},
-  {f:'United States',t:'Jamaica',      v:3.8, tier:2},
-  {f:'United States',t:'Haiti',        v:4,   tier:2},
-  {f:'United States',t:'Nicaragua',    v:4.5, tier:2},
-  {f:'United States',t:'Kenya',        v:3,   tier:2},
-  {f:'UAE',          t:'Bangladesh',   v:7,   tier:2},
-  {f:'UAE',          t:'Philippines',  v:6,   tier:2},
-  {f:'UAE',          t:'Nepal',        v:5,   tier:2},
-  {f:'Saudi Arabia', t:'Bangladesh',   v:5,   tier:2},
-  {f:'Saudi Arabia', t:'Egypt',        v:6,   tier:2},
-  {f:'Saudi Arabia', t:'Philippines',  v:4,   tier:2},
-  {f:'Kuwait',       t:'Pakistan',     v:4,   tier:2},
-  {f:'Qatar',        t:'Nepal',        v:3.5, tier:2},
-  {f:'United Kingdom',t:'Nigeria',     v:4,   tier:2},
-  {f:'United Kingdom',t:'Pakistan',    v:3.5, tier:2},
-  {f:'United Kingdom',t:'Ghana',       v:2.5, tier:2},
-  {f:'United Kingdom',t:'Kenya',       v:2.5, tier:2},
-  {f:'Germany',      t:'India',        v:3,   tier:2},
-  {f:'France',       t:'Algeria',      v:2.5, tier:2},
-  {f:'France',       t:'Tunisia',      v:2.4, tier:2},
-  {f:'France',       t:'Senegal',      v:2.7, tier:2},
-  {f:'Italy',        t:'Romania',      v:3,   tier:2},
-  {f:'Italy',        t:'Morocco',      v:2.5, tier:2},
-  {f:'Spain',        t:'Colombia',     v:3,   tier:2},
-  {f:'Spain',        t:'Morocco',      v:2,   tier:2},
-  {f:'Russia',       t:'Ukraine',      v:2.5, tier:2},
-  {f:'Russia',       t:'Tajikistan',   v:2.5, tier:2},
-  {f:'South Africa', t:'Zimbabwe',     v:1.7, tier:2},
-  {f:'Canada',       t:'Philippines',  v:3,   tier:2},
-  {f:'Australia',    t:'Philippines',  v:2.5, tier:2},
-  {f:'Australia',    t:'India',        v:3,   tier:2},
-  {f:'Japan',        t:'Philippines',  v:2,   tier:2},
-  {f:'Japan',        t:'Vietnam',      v:2,   tier:2},
-  {f:'South Korea',  t:'Vietnam',      v:2,   tier:2},
-  {f:'Malaysia',     t:'Bangladesh',   v:2.5, tier:2},
-  {f:'Netherlands',  t:'Morocco',      v:1.5, tier:1},
-  {f:'Belgium',      t:'Morocco',      v:1.2, tier:1},
-  {f:'Sweden',       t:'Somalia',      v:0.8, tier:1},
-  {f:'Norway',       t:'Somalia',      v:0.7, tier:1},
-  {f:'India',        t:'Nepal',        v:1.2, tier:1},
-  {f:'Mexico',       t:'Guatemala',    v:0.8, tier:1},
-  {f:'China',        t:'Vietnam',      v:1.2, tier:1},
-  {f:'Thailand',     t:'Myanmar',      v:1,   tier:1},
-  {f:'Thailand',     t:'Cambodia',     v:0.7, tier:1},
-  {f:'Portugal',     t:'Brazil',       v:2,   tier:2},
-  {f:'South Africa', t:'Mozambique',   v:1.5, tier:2},
-  {f:'Malaysia',     t:'Indonesia',    v:2,   tier:2},
-  {f:'Italy',        t:'Bangladesh',   v:2,   tier:2},
-  {f:'Spain',        t:'Ecuador',      v:2.5, tier:2},
+  {f:'United States',t:'Mexico',v:68,tier:4},{f:'United States',t:'India',v:54,tier:4},
+  {f:'UAE',t:'India',v:42,tier:4},{f:'United States',t:'China',v:35,tier:4},
+  {f:'Saudi Arabia',t:'India',v:32,tier:4},
+  {f:'United States',t:'Philippines',v:22,tier:3},{f:'United States',t:'Guatemala',v:19,tier:3},
+  {f:'UAE',t:'Pakistan',v:18,tier:3},{f:'Saudi Arabia',t:'Pakistan',v:16,tier:3},
+  {f:'United States',t:'Vietnam',v:14,tier:3},{f:'United Kingdom',t:'India',v:15,tier:3},
+  {f:'Germany',t:'Turkey',v:13,tier:3},{f:'France',t:'Morocco',v:11,tier:3},
+  {f:'Russia',t:'Uzbekistan',v:14,tier:3},{f:'United States',t:'Dominican Republic',v:10.4,tier:3},
+  {f:'United States',t:'Honduras',v:9.1,tier:3},{f:'United States',t:'Colombia',v:9.8,tier:3},
+  {f:'Canada',t:'India',v:8,tier:3},{f:'Kuwait',t:'India',v:9,tier:3},
+  {f:'Qatar',t:'India',v:8,tier:3},{f:'United States',t:'El Salvador',v:8.2,tier:3},
+  {f:'United States',t:'Nigeria',v:7,tier:2},{f:'United States',t:'Ecuador',v:4.4,tier:2},
+  {f:'United States',t:'Jamaica',v:3.8,tier:2},{f:'United States',t:'Haiti',v:4,tier:2},
+  {f:'United States',t:'Nicaragua',v:4.5,tier:2},{f:'United States',t:'Kenya',v:3,tier:2},
+  {f:'UAE',t:'Bangladesh',v:7,tier:2},{f:'UAE',t:'Philippines',v:6,tier:2},
+  {f:'UAE',t:'Nepal',v:5,tier:2},{f:'Saudi Arabia',t:'Bangladesh',v:5,tier:2},
+  {f:'Saudi Arabia',t:'Egypt',v:6,tier:2},{f:'Saudi Arabia',t:'Philippines',v:4,tier:2},
+  {f:'Kuwait',t:'Pakistan',v:4,tier:2},{f:'Qatar',t:'Nepal',v:3.5,tier:2},
+  {f:'United Kingdom',t:'Nigeria',v:4,tier:2},{f:'United Kingdom',t:'Pakistan',v:3.5,tier:2},
+  {f:'United Kingdom',t:'Ghana',v:2.5,tier:2},{f:'United Kingdom',t:'Kenya',v:2.5,tier:2},
+  {f:'Germany',t:'India',v:3,tier:2},{f:'France',t:'Algeria',v:2.5,tier:2},
+  {f:'France',t:'Tunisia',v:2.4,tier:2},{f:'France',t:'Senegal',v:2.7,tier:2},
+  {f:'Italy',t:'Romania',v:3,tier:2},{f:'Italy',t:'Morocco',v:2.5,tier:2},
+  {f:'Spain',t:'Colombia',v:3,tier:2},{f:'Spain',t:'Morocco',v:2,tier:2},
+  {f:'Russia',t:'Ukraine',v:2.5,tier:2},{f:'Russia',t:'Tajikistan',v:2.5,tier:2},
+  {f:'South Africa',t:'Zimbabwe',v:1.7,tier:2},{f:'Canada',t:'Philippines',v:3,tier:2},
+  {f:'Australia',t:'Philippines',v:2.5,tier:2},{f:'Australia',t:'India',v:3,tier:2},
+  {f:'Japan',t:'Philippines',v:2,tier:2},{f:'Japan',t:'Vietnam',v:2,tier:2},
+  {f:'South Korea',t:'Vietnam',v:2,tier:2},{f:'Malaysia',t:'Bangladesh',v:2.5,tier:2},
+  {f:'Portugal',t:'Brazil',v:2,tier:2},{f:'South Africa',t:'Mozambique',v:1.5,tier:2},
+  {f:'Malaysia',t:'Indonesia',v:2,tier:2},{f:'Italy',t:'Bangladesh',v:2,tier:2},
+  {f:'Spain',t:'Ecuador',v:2.5,tier:2},
+  {f:'Netherlands',t:'Morocco',v:1.5,tier:1},{f:'Belgium',t:'Morocco',v:1.2,tier:1},
+  {f:'Sweden',t:'Somalia',v:0.8,tier:1},{f:'Norway',t:'Somalia',v:0.7,tier:1},
+  {f:'India',t:'Nepal',v:1.2,tier:1},{f:'Mexico',t:'Guatemala',v:0.8,tier:1},
+  {f:'China',t:'Vietnam',v:1.2,tier:1},{f:'Thailand',t:'Myanmar',v:1,tier:1},
+  {f:'Thailand',t:'Cambodia',v:0.7,tier:1},
 ];
 const TIER={
-  4:{glow:8,  core:3.2,opacity:.95,color:'255,255,255',dot:5,  tailLen:.22,speed:.016},
-  3:{glow:5,  core:2.0,opacity:.82,color:'255,107,53', dot:3.5,tailLen:.25,speed:.019},
-  2:{glow:3,  core:1.3,opacity:.65,color:'0,212,255',  dot:2.5,tailLen:.28,speed:.022},
-  1:{glow:0,  core:.7, opacity:.35,color:'0,180,220',  dot:1.5,tailLen:.32,speed:.026},
+  4:{glow:8,core:3.2,opacity:.95,color:'255,255,255',dot:5,tailLen:.22,speed:.016},
+  3:{glow:5,core:2.0,opacity:.82,color:'255,107,53', dot:3.5,tailLen:.25,speed:.019},
+  2:{glow:3,core:1.3,opacity:.65,color:'0,212,255',  dot:2.5,tailLen:.28,speed:.022},
+  1:{glow:0,core:.7, opacity:.35,color:'0,180,220',  dot:1.5,tailLen:.32,speed:.026},
 };
 
 // ── LEADERBOARD DATA ──────────────────────────────────────────────────────────
 const LB={
   receivers:[
-    {name:'India',        iso2:'IN',v:129e9,disp:'$129B',info:'← USA & UAE'},
-    {name:'Mexico',       iso2:'MX',v:68e9, disp:'$68B', info:'← USA'},
-    {name:'China',        iso2:'CN',v:48e9, disp:'$48B', info:'← USA & Australia'},
-    {name:'Philippines',  iso2:'PH',v:40e9, disp:'$40B', info:'← USA & UAE'},
-    {name:'Pakistan',     iso2:'PK',v:33e9, disp:'$33B', info:'← UAE & Saudi Arabia'},
-    {name:'Egypt',        iso2:'EG',v:28e9, disp:'$28B', info:'← Gulf States'},
-    {name:'Bangladesh',   iso2:'BD',v:22e9, disp:'$22B', info:'← UAE & Saudi Arabia'},
-    {name:'Nigeria',      iso2:'NG',v:20e9, disp:'$20B', info:'← USA & UK'},
-    {name:'Ukraine',      iso2:'UA',v:20e9, disp:'$20B', info:'← Europe'},
-    {name:'Vietnam',      iso2:'VN',v:16e9, disp:'$16B', info:'← USA & S.Korea'},
-    {name:'Guatemala',    iso2:'GT',v:19e9, disp:'$19B', info:'← USA'},
-    {name:'Morocco',      iso2:'MA',v:11.8e9,disp:'$11.8B',info:'← France & Spain'},
-    {name:'Nepal',        iso2:'NP',v:9.7e9,disp:'$9.7B', info:'← UAE & Malaysia'},
-    {name:'El Salvador',  iso2:'SV',v:8.2e9,disp:'$8.2B', info:'← USA'},
-    {name:'Honduras',     iso2:'HN',v:9.1e9,disp:'$9.1B', info:'← USA'},
+    {name:'India',iso2:'IN',v:129e9,disp:'$129B',info:'← USA & UAE'},
+    {name:'Mexico',iso2:'MX',v:68e9,disp:'$68B',info:'← USA'},
+    {name:'China',iso2:'CN',v:48e9,disp:'$48B',info:'← USA & Australia'},
+    {name:'Philippines',iso2:'PH',v:40e9,disp:'$40B',info:'← USA & UAE'},
+    {name:'Pakistan',iso2:'PK',v:33e9,disp:'$33B',info:'← UAE & Saudi Arabia'},
+    {name:'Egypt',iso2:'EG',v:28e9,disp:'$28B',info:'← Gulf States'},
+    {name:'Bangladesh',iso2:'BD',v:22e9,disp:'$22B',info:'← UAE & Saudi Arabia'},
+    {name:'Guatemala',iso2:'GT',v:19e9,disp:'$19B',info:'← USA'},
+    {name:'Nigeria',iso2:'NG',v:20e9,disp:'$20B',info:'← USA & UK'},
+    {name:'Ukraine',iso2:'UA',v:20e9,disp:'$20B',info:'← Europe'},
+    {name:'Vietnam',iso2:'VN',v:16e9,disp:'$16B',info:'← USA & S.Korea'},
+    {name:'Morocco',iso2:'MA',v:11.8e9,disp:'$11.8B',info:'← France & Spain'},
+    {name:'Nepal',iso2:'NP',v:9.7e9,disp:'$9.7B',info:'← UAE & Malaysia'},
+    {name:'Honduras',iso2:'HN',v:9.1e9,disp:'$9.1B',info:'← USA'},
+    {name:'El Salvador',iso2:'SV',v:8.2e9,disp:'$8.2B',info:'← USA'},
   ],
   senders:[
-    {name:'United States', iso2:'US',v:68e9,  disp:'$68B',   info:'→ Mexico & India'},
-    {name:'UAE',           iso2:'AE',v:45e9,  disp:'$45B',   info:'→ India & Pakistan'},
-    {name:'Saudi Arabia',  iso2:'SA',v:38e9,  disp:'$38B',   info:'→ India & Pakistan'},
-    {name:'Switzerland',   iso2:'CH',v:28e9,  disp:'$28B',   info:'→ India & SE Asia'},
-    {name:'United Kingdom',iso2:'GB',v:25e9,  disp:'$25B',   info:'→ India & Nigeria'},
-    {name:'Canada',        iso2:'CA',v:25e9,  disp:'$25B',   info:'→ India & Philippines'},
-    {name:'Germany',       iso2:'DE',v:24e9,  disp:'$24B',   info:'→ Turkey & India'},
-    {name:'Kuwait',        iso2:'KW',v:14.5e9,disp:'$14.5B', info:'→ India & Pakistan'},
-    {name:'Qatar',         iso2:'QA',v:14.5e9,disp:'$14.5B', info:'→ India & Nepal'},
-    {name:'France',        iso2:'FR',v:13e9,  disp:'$13B',   info:'→ Morocco & Senegal'},
-    {name:'Australia',     iso2:'AU',v:5.5e9, disp:'$5.5B',  info:'→ Philippines & India'},
-    {name:'Japan',         iso2:'JP',v:3.6e9, disp:'$3.6B',  info:'→ Philippines & Vietnam'},
-    {name:'South Korea',   iso2:'KR',v:4.2e9, disp:'$4.2B',  info:'→ Vietnam & SE Asia'},
-    {name:'Italy',         iso2:'IT',v:10e9,  disp:'$10B',   info:'→ Romania & Morocco'},
-    {name:'Spain',         iso2:'ES',v:12.5e9,disp:'$12.5B', info:'→ Colombia & Morocco'},
+    {name:'United States',iso2:'US',v:68e9,disp:'$68B',info:'→ Mexico & India'},
+    {name:'UAE',iso2:'AE',v:45e9,disp:'$45B',info:'→ India & Pakistan'},
+    {name:'Saudi Arabia',iso2:'SA',v:38e9,disp:'$38B',info:'→ India & Pakistan'},
+    {name:'Switzerland',iso2:'CH',v:28e9,disp:'$28B',info:'→ India & SE Asia'},
+    {name:'United Kingdom',iso2:'GB',v:25e9,disp:'$25B',info:'→ India & Nigeria'},
+    {name:'Canada',iso2:'CA',v:25e9,disp:'$25B',info:'→ India & Philippines'},
+    {name:'Germany',iso2:'DE',v:24e9,disp:'$24B',info:'→ Turkey & India'},
+    {name:'Kuwait',iso2:'KW',v:14.5e9,disp:'$14.5B',info:'→ India & Pakistan'},
+    {name:'Qatar',iso2:'QA',v:14.5e9,disp:'$14.5B',info:'→ India & Nepal'},
+    {name:'France',iso2:'FR',v:13e9,disp:'$13B',info:'→ Morocco & Senegal'},
+    {name:'Spain',iso2:'ES',v:12.5e9,disp:'$12.5B',info:'→ Colombia & Morocco'},
+    {name:'Italy',iso2:'IT',v:10e9,disp:'$10B',info:'→ Romania & Morocco'},
+    {name:'South Korea',iso2:'KR',v:4.2e9,disp:'$4.2B',info:'→ Vietnam & SE Asia'},
+    {name:'Australia',iso2:'AU',v:5.5e9,disp:'$5.5B',info:'→ Philippines & India'},
+    {name:'Japan',iso2:'JP',v:3.6e9,disp:'$3.6B',info:'→ Philippines & Vietnam'},
   ]
 };
-
-// ── FX PAIRS ──────────────────────────────────────────────────────────────────
 const FX_PAIRS=[
   {code:'INR',iso2:'IN',country:'India'},{code:'MXN',iso2:'MX',country:'Mexico'},
   {code:'PHP',iso2:'PH',country:'Philippines'},{code:'PKR',iso2:'PK',country:'Pakistan'},
@@ -615,21 +529,12 @@ const FX_PAIRS=[
 ];
 const FX_COUNTRY={INR:'India',MXN:'Mexico',PHP:'Philippines',PKR:'Pakistan',NGN:'Nigeria',EGP:'Egypt',BDT:'Bangladesh',VND:'Vietnam',IDR:'Indonesia',MAD:'Morocco',KES:'Kenya',GHS:'Ghana',UAH:'Ukraine',GTQ:'Guatemala',NPR:'Nepal'};
 
-// ══════════════════════════════════════════════════════════════════════════════
-// GLOBAL COUNTER
-// ══════════════════════════════════════════════════════════════════════════════
+// ── COUNTER ───────────────────────────────────────────────────────────────────
 const PER_SEC=905e9/365.25/86400;
-function gcTick(){
-  const now=new Date(),sod=new Date(now);sod.setHours(0,0,0,0);
-  const v=(now-sod)/1000*PER_SEC;
-  const s=v>=1e9?'$'+(v/1e9).toFixed(2)+'B':'$'+(v/1e6).toFixed(0)+'M';
-  const el=document.getElementById('gc-value');if(el)el.textContent=s;
-}
+function gcTick(){const now=new Date(),sod=new Date(now);sod.setHours(0,0,0,0);const v=(now-sod)/1000*PER_SEC;const s=v>=1e9?'$'+(v/1e9).toFixed(2)+'B':'$'+(v/1e6).toFixed(0)+'M';const el=document.getElementById('gc-value');if(el)el.textContent=s;}
 gcTick();setInterval(gcTick,1000);
 
-// ══════════════════════════════════════════════════════════════════════════════
-// DATA — World Bank + FX
-// ══════════════════════════════════════════════════════════════════════════════
+// ── DATA ──────────────────────────────────────────────────────────────────────
 const WB_KEY='wb_rem_v4',FX_KEY='fx_v3';
 let wbData={},fxRates={},fxTs=null;
 function g(id){return document.getElementById(id);}
@@ -657,85 +562,42 @@ async function loadWB(){
 async function loadFX(){
   try{const c=JSON.parse(sessionStorage.getItem(FX_KEY)||'{}');if(c.ts&&Date.now()-c.ts<3600000){fxRates=c.rates||{};fxTs=c.ts;renderFX();return;}}catch(_){}
   try{const r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');if(!r.ok)throw new Error();const j=await r.json();fxRates=j.rates||{};fxTs=Date.now();sessionStorage.setItem(FX_KEY,JSON.stringify({ts:fxTs,rates:fxRates}));}catch(_){fxRates={};fxTs=null;}
-  renderFX();if(currentCountry&&activeTab==='providers')refreshFXRow(currentCountry);
+  renderFX();if(currentCountry&&activeTab==='providers')renderProviders(currentCountry);
 }
 loadWB();loadFX();setInterval(()=>{sessionStorage.removeItem(FX_KEY);loadFX();},3600000);
 
-// ══════════════════════════════════════════════════════════════════════════════
-// FX PANEL (desktop) + FX SHEET (mobile)
-// ══════════════════════════════════════════════════════════════════════════════
-let fxOpen=true, mobFxOpen=false;
-
-function toggleFX(){
-  fxOpen=!fxOpen;
-  g('fx-panel').classList.toggle('fx-hidden',!fxOpen);
-  g('fx-collapse-tab').textContent=fxOpen?'›':'‹';
-  document.getElementById('app').classList.toggle('fx-hidden',!fxOpen);
-  // flip arrow direction
-  g('fx-collapse-tab').style.right=fxOpen?'-22px':'auto';
-  g('fx-collapse-tab').style.left=fxOpen?'auto':'-22px';
-}
-function toggleMobFX(){
-  mobFxOpen=!mobFxOpen;
-  g('fx-sheet').classList.toggle('sheet-open',mobFxOpen);
-  g('mob-fx-btn').classList.toggle('active',mobFxOpen);
-  if(mobFxOpen)renderFXSheet();
-}
+// ── FX PANELS ─────────────────────────────────────────────────────────────────
+let fxOpen=true,mobFxOpen=false;
+function toggleFX(){fxOpen=!fxOpen;g('fx-panel').classList.toggle('fx-hidden',!fxOpen);g('fx-collapse-tab').textContent=fxOpen?'›':'‹';document.getElementById('app').classList.toggle('fx-hidden',!fxOpen);}
+function toggleMobFX(){mobFxOpen=!mobFxOpen;g('fx-sheet').classList.toggle('sheet-open',mobFxOpen);g('mob-fx-btn').classList.toggle('active',mobFxOpen);if(mobFxOpen)renderFXSheet();}
 function fmtRate(r){if(!r)return'–';if(r>10000)return r.toLocaleString(undefined,{maximumFractionDigits:0});if(r>100)return r.toLocaleString(undefined,{maximumFractionDigits:0});if(r>10)return r.toFixed(2);return r.toFixed(4);}
-
 function renderFX(){
-  // Desktop sidebar
   const list=g('fx-list'),footer=g('fx-footer');if(!list)return;
-  list.innerHTML=FX_PAIRS.map(p=>{
-    const rate=fxRates[p.code];
-    return`<div class="fx-row" onclick="fxClick('${p.code}')">${makeFlag(p.iso2,'flag-sm')}<span class="fx-code">${p.code}</span><span class="fx-rate${rate?' loaded':''}">${fmtRate(rate)}</span></div>`;
-  }).join('');
-  const ts=fxTs?'UPDATED '+new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'UNAVAILABLE';
-  footer.textContent=ts;
-  // Mobile sheet (if open)
+  list.innerHTML=FX_PAIRS.map(p=>{const rate=fxRates[p.code];return`<div class="fx-row" onclick="fxClick('${p.code}')">${makeFlag(p.iso2,'flag-sm')}<span class="fx-code">${p.code}</span><span class="fx-rate${rate?' loaded':''}">${fmtRate(rate)}</span></div>`;}).join('');
+  footer.textContent=fxTs?'UPDATED '+new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'UNAVAILABLE';
   if(mobFxOpen)renderFXSheet();
 }
 function renderFXSheet(){
   const body=g('fx-sheet-body'),footer=g('fx-sheet-footer');if(!body)return;
-  body.innerHTML=FX_PAIRS.map(p=>{
-    const rate=fxRates[p.code];
-    return`<div class="fx-sheet-row" onclick="fxClick('${p.code}');toggleMobFX()">${makeFlag(p.iso2,'flag-sm')}<span class="fx-sheet-code">${p.code}</span><span class="fx-sheet-rate${rate?' loaded':''}">${fmtRate(rate)}</span></div>`;
-  }).join('');
+  body.innerHTML=FX_PAIRS.map(p=>{const rate=fxRates[p.code];return`<div class="fx-sheet-row" onclick="fxClick('${p.code}');toggleMobFX()">${makeFlag(p.iso2,'flag-sm')}<span class="fx-sheet-code">${p.code}</span><span class="fx-sheet-rate${rate?' loaded':''}">${fmtRate(rate)}</span></div>`;}).join('');
   footer.textContent=fxTs?'Updated '+new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'Rate data unavailable';
 }
-function fxClick(code){
-  const name=FX_COUNTRY[code];if(!name||!CENS[name])return;
-  const[lon,lat]=CENS[name];
-  flyTo(lon,lat,()=>{for(const[id,n]of Object.entries(NAMES)){if(n===name){selectCountry(parseInt(id),name);return;}}});
-}
+function fxClick(code){const name=FX_COUNTRY[code];if(!name||!CENS[name])return;const[lon,lat]=CENS[name];flyTo(lon,lat,()=>{for(const[id,n]of Object.entries(NAMES)){if(n===name){selectCountry(parseInt(id),name);return;}}});}
 
-// ══════════════════════════════════════════════════════════════════════════════
-// LEADERBOARD
-// ══════════════════════════════════════════════════════════════════════════════
+// ── LEADERBOARD ───────────────────────────────────────────────────────────────
 let lbOpen=false,lbTab='receivers';
-function toggleLB(){
-  lbOpen=!lbOpen;
-  g('leaderboard').classList.toggle('lb-open',lbOpen);
-  document.getElementById('app').classList.toggle('lb-open',lbOpen);
-  g('lb-arrow').textContent=lbOpen?'▼':'▲';
-  g('mob-lb-btn').classList.toggle('active',lbOpen);
-  if(lbOpen)renderLB();
-}
+function toggleLB(){lbOpen=!lbOpen;g('leaderboard').classList.toggle('lb-open',lbOpen);document.getElementById('app').classList.toggle('lb-open',lbOpen);g('lb-arrow').textContent=lbOpen?'▼':'▲';g('mob-lb-btn').classList.toggle('active',lbOpen);if(lbOpen)renderLB();}
 function setLbTab(tab){lbTab=tab;g('lb-tab-r').classList.toggle('active',tab==='receivers');g('lb-tab-s').classList.toggle('active',tab==='senders');renderLB();}
 function renderLB(){
   const data=LB[lbTab],isSend=lbTab==='senders',maxV=data[0].v;
   const medals=['🥇','🥈','🥉'],bar=isSend?'#ff9500':'#00e5a0',cls=isSend?'send':'recv';
-  g('lb-list').innerHTML=data.map((row,i)=>{
-    const pct=(row.v/maxV*100).toFixed(1);
-    return`<div class="lb-row" onclick="lbGo('${row.name}')">`+
-      `<span class="lb-rank">${medals[i]||(i+1)}</span>`+
-      makeFlag(row.iso2,'flag-sm')+
-      `<span class="lb-name">${row.name}</span>`+
-      `<span class="lb-amt ${cls}">${row.disp}</span>`+
-      `<span class="lb-info">${row.info}</span>`+
-      `<div class="lb-bar"><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${pct}%;background:${bar}"></div></div></div>`+
-      `</div>`;
-  }).join('');
+  g('lb-list').innerHTML=data.map((row,i)=>`<div class="lb-row" onclick="lbGo('${row.name}')">`+
+    `<span class="lb-rank">${medals[i]||(i+1)}</span>`+makeFlag(row.iso2,'flag-sm')+
+    `<span class="lb-name">${row.name}</span>`+
+    `<span class="lb-amt ${cls}">${row.disp}</span>`+
+    `<span class="lb-info">${row.info}</span>`+
+    `<div class="lb-bar"><div class="lb-bar-track"><div class="lb-bar-fill" style="width:${(row.v/maxV*100).toFixed(1)}%;background:${bar}"></div></div></div>`+
+    `</div>`).join('');
 }
 function lbGo(name){
   const cen=CENS[name];if(!cen)return;
@@ -743,9 +605,7 @@ function lbGo(name){
   if(lbOpen){lbOpen=false;g('leaderboard').classList.remove('lb-open');document.getElementById('app').classList.remove('lb-open');g('lb-arrow').textContent='▲';g('mob-lb-btn').classList.remove('active');}
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// FLY-TO
-// ══════════════════════════════════════════════════════════════════════════════
+// ── FLY-TO ────────────────────────────────────────────────────────────────────
 function flyTo(lon,lat,done){
   const s0=rot[0],s1=rot[1];let d0=-lon-s0;while(d0>180)d0-=360;while(d0<-180)d0+=360;
   const e1=Math.max(-65,Math.min(65,-lat)),t0=performance.now(),dur=950;
@@ -753,35 +613,156 @@ function flyTo(lon,lat,done){
   requestAnimationFrame(step);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PANEL
-// ══════════════════════════════════════════════════════════════════════════════
+// ── PANEL ─────────────────────────────────────────────────────────────────────
 let currentCountry=null,activeTab='overview';
 function switchTab(tab){activeTab=tab;['overview','providers'].forEach(t=>{g('pane-'+t).classList.toggle('show',t===tab);g('tab-btn-'+t).classList.toggle('active',t===tab);});if(tab==='providers'&&currentCountry)renderProviders(currentCountry);}
 window.switchTab=switchTab;
 function refreshOv(){if(!currentCountry)return;const wb=wbData[currentCountry]||{},mno=window.MNO_DATA?.[currentCountry]||{};g('rem-in').textContent=wb.inflow||'N/A';g('rem-in-gdp').textContent=wb.gdpPct||'';g('rem-out').textContent=wb.outflow||mno.outflow||'N/A';g('rem-year-pill').textContent=wb.year||'2024';g('rem-year-badge').textContent='DATA '+(wb.year||'2024');const sb=g('rem-src-badge');sb.textContent=wb.source||'BASELINE 2024';sb.className='badge '+(wb.source==='WORLD BANK'?'badge-live':'badge-base');}
-function refreshFXRow(name){const cur=window.CURRENCY?.[name]||'LOCAL',rate=fxRates[cur];g('mm-label').textContent=`MID-MARKET RATE · USD → ${cur}`;g('mm-upd').style.display='none';if(rate){const d=rate>100?0:rate>10?2:4;g('mm-value').textContent=`1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}`;const ts=fxTs?new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';g('mm-time').innerHTML=ts?`<div style="text-align:right;font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc"><div>LIVE</div><div style="opacity:.6">${ts}</div></div>`:'';document.querySelectorAll('.prec').forEach(el=>{const eff=rate*(1-parseFloat(el.dataset.fxm)/100),gets=(200-parseFloat(el.dataset.fee))*eff;el.innerHTML=`$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:gets>1000?0:2})} ${cur}</span>`;});}else{g('mm-value').textContent='Rate unavailable';g('mm-time').textContent='';}}
-function renderProviders(name){
-  const cur=window.CURRENCY?.[name]||'LOCAL',provs=window.PROVIDERS?.[name]||window.PROVIDERS?.['default']||[],rate=fxRates[cur];
-  g('mm-label').textContent=`MID-MARKET RATE · USD → ${cur}`;
-  if(rate){const d=rate>100?0:rate>10?2:4;g('mm-value').textContent=`1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}`;const ts=fxTs?new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';g('mm-time').innerHTML=ts?`<div style="text-align:right;font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc"><div>LIVE</div><div style="opacity:.6">${ts}</div></div>`:'';g('mm-upd').style.display='none';}
-  else{g('mm-value').textContent='–';g('mm-time').textContent='';g('mm-upd').style.display='flex';}
-  const m=['🥇','🥈','🥉'];
-  g('providers-list').innerHTML=provs.map((p,i)=>{
-    const tot=(p.fee_usd/200*100+p.fx_pct).toFixed(2),feeD=p.fee_usd===0?'FREE':'$'+p.fee_usd.toFixed(2),fxD=p.fx_pct===0?'MID-MARKET':'+'+p.fx_pct+'%';
-    const tc=p.type==='digital'?'td':p.type==='bank'?'tb':'ta',tl=p.type==='digital'?'DIGITAL':p.type==='bank'?'BANK':'AGENT';
-    let recv;if(rate&&cur!=='USD'){const eff=rate*(1-p.fx_pct/100),gets=(200-p.fee_usd)*eff;recv=`<div class="prov-recv prec" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}">$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:gets>1000?0:2})} ${cur}</span></div>`;}else if(cur==='USD'){recv=`<div class="prov-recv">$200 → <span>$${(200-p.fee_usd).toFixed(2)} USD</span></div>`;}else{recv=`<div class="prov-recv prec" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}" style="opacity:.5">Calculating…</div>`;}
-    return`<div class="prov-card"><div class="prov-head"><div class="prov-left"><div class="prov-dot" style="background:${p.color}"></div><div class="prov-name">${m[i]||''} ${p.name}</div><span class="prov-type ${tc}">${tl}</span></div><div class="prov-spd">⚡ ${p.delivery}</div></div><div class="pstats"><div class="ps"><div class="psl">SEND FEE</div><div class="psv">${feeD}</div></div><div class="ps"><div class="psl">FX MARGIN</div><div class="psv">${fxD}</div></div><div class="ps"><div class="psl">TOTAL COST</div><div class="psv${+tot<1.5?' chp':''}">~${tot}%</div></div></div>${recv}<a class="prov-btn" href="${p.url}" target="_blank" rel="noopener">GET LIVE QUOTE ↗</a><div class="prov-note-txt">${p.note}</div></div>`;
+
+// ════════════════════════════════════════════════════════════════════════════
+// TELCOIN FEATURED CARD + PROVIDER RENDERING
+// ════════════════════════════════════════════════════════════════════════════
+function renderProviders(name) {
+  const cur     = window.CURRENCY?.[name] || 'LOCAL';
+  const allProvs= window.PROVIDERS?.[name] || window.PROVIDERS?.['default'] || [];
+  const rate    = fxRates[cur];
+  const isMNO   = window.TELCOIN_MNO_COUNTRIES?.has(name);
+
+  // Split Telcoin from traditional providers
+  const telProv  = allProvs.find(p => p.telcoin);
+  const tradProvs= allProvs.filter(p => !p.telcoin).slice(0, 3);
+
+  // Mid-market bar
+  g('mm-label').textContent = `MID-MARKET RATE · USD → ${cur}`;
+  if(rate){
+    const d=rate>100?0:rate>10?2:4;
+    g('mm-value').textContent=`1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}`;
+    const ts=fxTs?new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+    g('mm-time').innerHTML=ts?`<div style="text-align:right;font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc"><div>LIVE</div><div style="opacity:.6">${ts}</div></div>`:'';
+    g('mm-upd').style.display='none';
+  } else {
+    g('mm-value').textContent='–';g('mm-time').textContent='';g('mm-upd').style.display='flex';
+  }
+
+  // ── TELCOIN FEATURED CARD ──
+  const telSection = g('telcoin-section');
+  if (telProv) {
+    const telTotal = (telProv.fee_usd/200*100 + telProv.fx_pct).toFixed(2);
+
+    // Calculate savings vs traditional average
+    const tradCosts = tradProvs.map(p => p.fee_usd/200*100 + p.fx_pct);
+    const tradAvg   = tradCosts.length ? tradCosts.reduce((a,b)=>a+b,0)/tradCosts.length : 3.5;
+    const savingsPct= Math.max(0, tradAvg - +telTotal);
+
+    // What recipient gets
+    let telRecvHTML = '';
+    let savingsHTML = '';
+    if (rate && cur !== 'USD') {
+      const telEff  = rate * (1 - telProv.fx_pct/100);
+      const telGets = (200 - telProv.fee_usd) * telEff;
+      const d       = telGets > 1000 ? 0 : 2;
+      const telStr  = telGets.toLocaleString(undefined,{maximumFractionDigits:d});
+
+      // Savings vs traditional average in local currency
+      const tradEffAvg= rate * (1 - (tradProvs.reduce((a,p)=>a+p.fx_pct,0)/tradProvs.length||2)/100);
+      const tradGets  = (200 - (tradProvs.reduce((a,p)=>a+p.fee_usd,0)/tradProvs.length||3)) * tradEffAvg;
+      const savedAmt  = Math.max(0, telGets - tradGets);
+      const savedStr  = savedAmt.toLocaleString(undefined,{maximumFractionDigits:savedAmt>100?0:2});
+
+      telRecvHTML = `<div class="tel-recv">$200 → <span class="amt">${telStr} ${cur}</span></div>`;
+
+      if (savingsPct > 0.1) {
+        const telBarW  = 100;
+        const tradBarW = Math.min(100, (tradAvg / +telTotal) * 100);
+        savingsHTML = `
+        <div class="tel-savings">
+          <div class="tel-savings-label">
+            <span>COST COMPARISON · $200 TRANSFER</span>
+            <span class="tel-savings-highlight">SAVE ~${cur} ${savedStr}</span>
+          </div>
+          <div style="position:relative;height:6px">
+            <div class="tel-bar-wrap">
+              <div class="tel-bar-trad" style="width:${Math.min(100,tradBarW).toFixed(0)}%"></div>
+              <div class="tel-bar-tel" style="width:${telBarW}%;position:absolute;top:0;left:0"></div>
+            </div>
+          </div>
+          <div class="tel-bar-labels">
+            <span class="tel-bar-l">TELCOIN ~${telTotal}%</span>
+            <span class="tel-bar-r">TRAD. AVG ~${tradAvg.toFixed(1)}%</span>
+          </div>
+        </div>`;
+      }
+    } else if (cur === 'USD') {
+      const gets = (200 - telProv.fee_usd).toFixed(2);
+      telRecvHTML = `<div class="tel-recv">$200 → <span class="amt">$${gets} USD</span></div>`;
+    } else {
+      telRecvHTML = `<div class="tel-recv" style="opacity:.5">Calculating…</div>`;
+    }
+
+    const mnoHTML = isMNO
+      ? `<div class="tel-mno-badge"><div class="tel-mno-dot"></div><span class="tel-mno-text">MNO PARTNER · Direct wallet delivery on recipient's mobile network</span></div>`
+      : '';
+
+    telSection.innerHTML = `
+      <div class="slabel">⚡ FEATURED BEST RATE</div>
+      <div class="tel-card">
+        <div class="tel-header">
+          <div class="tel-name-row">
+            <div class="tel-logo">TEL</div>
+            <span class="tel-name">Telcoin</span>
+          </div>
+          <div class="tel-badges">
+            <span class="tel-badge-best">LOWEST COST</span>
+            <span class="tel-badge-type">BLOCKCHAIN</span>
+          </div>
+        </div>
+        <div class="tel-speed">⚡ ${telProv.delivery} &nbsp;·&nbsp; Blockchain-settled</div>
+        ${mnoHTML}
+        <div class="tel-stats">
+          <div class="tel-stat"><div class="tel-stat-lbl">SEND FEE</div><div class="tel-stat-val">${telProv.fee_usd===0?'FREE':'$'+telProv.fee_usd.toFixed(2)}</div></div>
+          <div class="tel-stat"><div class="tel-stat-lbl">FX MARGIN</div><div class="tel-stat-val">+${telProv.fx_pct}%</div></div>
+          <div class="tel-stat"><div class="tel-stat-lbl">TOTAL COST</div><div class="tel-stat-val">~${telTotal}%</div></div>
+        </div>
+        ${telRecvHTML}
+        ${savingsHTML}
+        <a class="tel-cta" href="${telProv.url}" target="_blank" rel="noopener">GET STARTED WITH TELCOIN ↗</a>
+        <div class="tel-note">${telProv.note}</div>
+      </div>`;
+  } else {
+    telSection.innerHTML = '';
+  }
+
+  // ── TRADITIONAL PROVIDERS ──
+  const hasTel = !!telProv;
+  const m = ['🥇','🥈','🥉'];
+  const tradHTML = tradProvs.map((p,i) => {
+    const tot=(p.fee_usd/200*100+p.fx_pct).toFixed(2);
+    const feeD=p.fee_usd===0?'FREE':'$'+p.fee_usd.toFixed(2);
+    const fxD=p.fx_pct===0?'MID-MARKET':'+'+p.fx_pct+'%';
+    const tc=p.type==='digital'?'td':p.type==='bank'?'tb':'ta';
+    const tl=p.type==='digital'?'DIGITAL':p.type==='bank'?'BANK':'AGENT';
+    let recv;
+    if(rate&&cur!=='USD'){const eff=rate*(1-p.fx_pct/100),gets=(200-p.fee_usd)*eff;recv=`<div class="prov-recv prec" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}">$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:gets>1000?0:2})} ${cur}</span></div>`;}
+    else if(cur==='USD'){recv=`<div class="prov-recv">$200 → <span>$${(200-p.fee_usd).toFixed(2)} USD</span></div>`;}
+    else{recv=`<div class="prov-recv prec" data-fee="${p.fee_usd}" data-fxm="${p.fx_pct}" style="opacity:.5">Calculating…</div>`;}
+    return `<div class="prov-card">
+      <div class="prov-head"><div class="prov-left"><div class="prov-dot" style="background:${p.color}"></div><div class="prov-name">${m[i]||''} ${p.name}</div><span class="prov-type ${tc}">${tl}</span></div><div class="prov-spd">⚡ ${p.delivery}</div></div>
+      <div class="pstats"><div class="ps"><div class="psl">SEND FEE</div><div class="psv">${feeD}</div></div><div class="ps"><div class="psl">FX MARGIN</div><div class="psv">${fxD}</div></div><div class="ps"><div class="psl">TOTAL COST</div><div class="psv${+tot<1.5?' chp':''}">~${tot}%</div></div></div>
+      ${recv}<a class="prov-btn" href="${p.url}" target="_blank" rel="noopener">GET LIVE QUOTE ↗</a>
+      <div class="prov-note-txt">${p.note}</div>
+    </div>`;
   }).join('');
+
+  g('providers-list').innerHTML = hasTel && tradProvs.length
+    ? `<div class="prov-divider"><div class="prov-divider-line"></div><span class="prov-divider-text">TRADITIONAL ALTERNATIVES</span><div class="prov-divider-line"></div></div>${tradHTML}`
+    : tradHTML;
 }
 
 function selectCountry(id,name){
   currentCountry=name;selId=id;
   const iso2=ISO2[name]||'';
-  // Flag using reliable jsdelivr CDN
   const wrap=g('panel-flag-wrap');
-  if(iso2){wrap.innerHTML=makeFlag(iso2,'flag-lg');}
-  else{wrap.innerHTML=`<div id="flag-fallback">${name.substring(0,2).toUpperCase()}</div>`;}
+  wrap.innerHTML=iso2?makeFlag(iso2,'flag-lg'):`<div style="width:44px;height:30px;border-radius:3px;background:rgba(58,154,255,.12);border:.5px solid rgba(58,154,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc">${name.substring(0,2).toUpperCase()}</div>`;
   g('country-name').textContent=name;
   activeTab='overview';g('pane-overview').className='tab-pane show';g('pane-providers').className='tab-pane';g('tab-btn-overview').className='ptab active';g('tab-btn-providers').className='ptab';
   const mno=window.MNO_DATA?.[name]||{},wb=wbData[name]||{};
@@ -794,9 +775,7 @@ function selectCountry(id,name){
 function closePanel(){g('info-panel').style.display='none';currentCountry=null;selId=null;}
 window.closePanel=closePanel;
 
-// ══════════════════════════════════════════════════════════════════════════════
-// GLOBE
-// ══════════════════════════════════════════════════════════════════════════════
+// ── GLOBE ─────────────────────────────────────────────────────────────────────
 (function(){const c=g('stars'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;for(let i=0;i<300;i++){x.beginPath();x.arc(Math.random()*c.width,Math.random()*c.height,Math.random()*1.1,0,Math.PI*2);x.fillStyle=`rgba(200,220,255,${(Math.random()*.45+.08).toFixed(2)})`;x.fill();}})();
 const canvas=g('globe-canvas'),ctx=canvas.getContext('2d');
 let W,H,proj,pg,world,countries;
@@ -810,60 +789,24 @@ function resize(){W=window.innerWidth;H=window.innerHeight;canvas.width=W;canvas
 function zoom(f){curScale=Math.max(MIN_S,Math.min(MAX_S,curScale*f));rebP();}
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.1:.91);},{passive:false});
 g('zoom-in').onclick=()=>zoom(1.2);g('zoom-out').onclick=()=>zoom(.83);
-// Mouse
 canvas.addEventListener('mousedown',e=>{dragging=true;lastMX=e.clientX;lastMY=e.clientY;didDrag=false;canvas.classList.add('grabbing');});
 window.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-lastMX,dy=e.clientY-lastMY;if(Math.abs(dx)>2||Math.abs(dy)>2)didDrag=true;const s=.28/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=e.clientX;lastMY=e.clientY;});
 window.addEventListener('mouseup',e=>{canvas.classList.remove('grabbing');if(!dragging)return;dragging=false;if(!didDrag)hClick(e.clientX,e.clientY);});
-// Touch — drag + pinch-to-zoom
-canvas.addEventListener('touchstart',e=>{
-  e.preventDefault();
-  if(e.touches.length===2){dragging=false;const t0=e.touches[0],t1=e.touches[1];pinchDist=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);}
-  else{const t=e.touches[0];dragging=true;lastMX=t.clientX;lastMY=t.clientY;didDrag=false;pinchDist=null;}
-},{passive:false});
-canvas.addEventListener('touchmove',e=>{
-  e.preventDefault();
-  if(e.touches.length===2&&pinchDist!==null){
-    const t0=e.touches[0],t1=e.touches[1];
-    const d=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);
-    zoom(d/pinchDist);pinchDist=d;
-  } else if(dragging&&e.touches.length===1){
-    const t=e.touches[0];const dx=t.clientX-lastMX,dy=t.clientY-lastMY;
-    if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;
-    const s=.35/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=t.clientX;lastMY=t.clientY;
-  }
-},{passive:false});
-canvas.addEventListener('touchend',e=>{
-  if(e.touches.length<2)pinchDist=null;
-  if(e.touches.length===0){dragging=false;if(!didDrag&&e.changedTouches.length>0){const t=e.changedTouches[0];hClick(t.clientX,t.clientY);}}
-});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===2){dragging=false;const t0=e.touches[0],t1=e.touches[1];pinchDist=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);}else{const t=e.touches[0];dragging=true;lastMX=t.clientX;lastMY=t.clientY;didDrag=false;pinchDist=null;}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===2&&pinchDist!==null){const t0=e.touches[0],t1=e.touches[1];const d=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);zoom(d/pinchDist);pinchDist=d;}else if(dragging&&e.touches.length===1){const t=e.touches[0];const dx=t.clientX-lastMX,dy=t.clientY-lastMY;if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;const s=.35/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=t.clientX;lastMY=t.clientY;}},{passive:false});
+canvas.addEventListener('touchend',e=>{if(e.touches.length<2)pinchDist=null;if(e.touches.length===0){dragging=false;if(!didDrag&&e.changedTouches.length>0){const t=e.changedTouches[0];hClick(t.clientX,t.clientY);}}});
 function dsq(a,b){const dx=a[0]-b[0],dy=a[1]-b[1];return dx*dx+dy*dy;}
-function hClick(x,y){
-  if(!countries)return;
-  const cx=W/2,cy=H/2,sc=getS(),dx=x-cx,dy=y-cy;
-  if(dx*dx+dy*dy>sc*sc){closePanel();return;}
-  const inv=proj.invert([x,y]);if(!inv){closePanel();return;}
-  for(const f of countries){try{if(d3.geoContains(f,inv)){const id=parseInt(f.id);const n=NAMES[id];if(n){selectCountry(id,n);return;}}}catch(_){}}
-  const thr=Math.max(2.5,8/curScale);let best=null,bestD=thr*thr;
-  for(const[n,[lon,lat]]of Object.entries(CENS)){const d=dsq(inv,[lon,lat]);if(d<bestD){bestD=d;best=n;}}
-  if(best){for(const[id,n]of Object.entries(NAMES)){if(n===best){selectCountry(parseInt(id),best);return;}}}
-  closePanel();
-}
+function hClick(x,y){if(!countries)return;const cx=W/2,cy=H/2,sc=getS(),dx=x-cx,dy=y-cy;if(dx*dx+dy*dy>sc*sc){closePanel();return;}const inv=proj.invert([x,y]);if(!inv){closePanel();return;}for(const f of countries){try{if(d3.geoContains(f,inv)){const id=parseInt(f.id);const n=NAMES[id];if(n){selectCountry(id,n);return;}}}catch(_){}}const thr=Math.max(2.5,8/curScale);let best=null,bestD=thr*thr;for(const[n,[lon,lat]]of Object.entries(CENS)){const d=dsq(inv,[lon,lat]);if(d<bestD){bestD=d;best=n;}}if(best){for(const[id,n]of Object.entries(NAMES)){if(n===best){selectCountry(parseInt(id),best);return;}}}closePanel();}
 function vis(ll){const phi=(90-ll[1])*Math.PI/180,theta=(ll[0]+180)*Math.PI/180;const v=[Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];const cp=(90+rot[1])*Math.PI/180,ct=(-rot[0]+180)*Math.PI/180;const c=[Math.sin(cp)*Math.cos(ct),Math.cos(cp),Math.sin(cp)*Math.sin(ct)];return v[0]*c[0]+v[1]*c[1]+v[2]*c[2]>.05;}
 function buildPts(fr,to){const ip=d3.geoInterpolate(fr,to);const pts=[];for(let i=0;i<=80;i++)pts.push(ip(i/80));return pts;}
-function spawnArc(){
-  const weighted=[];CORRIDORS.forEach(c=>{for(let i=0;i<c.tier;i++)weighted.push(c);});
-  const pool=[...weighted].sort(()=>Math.random()-.5);
-  for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;if(!vis(fr)&&!vis(to))continue;const t=TIER[c.tier];arcs.push({gp:buildPts(fr,to),tier:c.tier,t,p:0});return;}
-}
+function spawnArc(){const weighted=[];CORRIDORS.forEach(c=>{for(let i=0;i<c.tier;i++)weighted.push(c);});const pool=[...weighted].sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;if(!vis(fr)&&!vis(to))continue;const t=TIER[c.tier];arcs.push({gp:buildPts(fr,to),tier:c.tier,t,p:0});return;}}
 function drawArc(a){
   const{gp,t,p}=a;const sp=gp.map(ll=>proj(ll)).filter(Boolean);if(sp.length<2)return;
   const total=sp.length,hd=Math.min(Math.floor(p*total),total-1),tl=Math.max(0,Math.floor((p-t.tailLen)*total));
-  if(hd-tl<1)return;
-  let al=1;if(p>.80)al=1-(p-.80)/.20;al=Math.max(0,Math.min(1,al))*t.opacity;if(al<=.01)return;
+  if(hd-tl<1)return;let al=1;if(p>.80)al=1-(p-.80)/.20;al=Math.max(0,Math.min(1,al))*t.opacity;if(al<=.01)return;
   const col=t.color;ctx.save();
   if(t.glow>0){ctx.beginPath();ctx.moveTo(sp[tl][0],sp[tl][1]);for(let i=tl+1;i<=hd;i++)ctx.lineTo(sp[i][0],sp[i][1]);ctx.strokeStyle=`rgba(${col},${al*.15})`;ctx.lineWidth=t.glow;ctx.lineCap='round';ctx.stroke();}
-  const seg=hd-tl;
-  for(let i=tl;i<hd;i++){const frac=(i-tl)/seg,aa=al*(.12+frac*.88);ctx.beginPath();ctx.moveTo(sp[i][0],sp[i][1]);ctx.lineTo(sp[i+1][0],sp[i+1][1]);ctx.strokeStyle=`rgba(${col},${aa})`;ctx.lineWidth=t.core*(.3+frac*.7);ctx.lineCap='round';ctx.stroke();}
+  const seg=hd-tl;for(let i=tl;i<hd;i++){const frac=(i-tl)/seg,aa=al*(.12+frac*.88);ctx.beginPath();ctx.moveTo(sp[i][0],sp[i][1]);ctx.lineTo(sp[i+1][0],sp[i+1][1]);ctx.strokeStyle=`rgba(${col},${aa})`;ctx.lineWidth=t.core*(.3+frac*.7);ctx.lineCap='round';ctx.stroke();}
   ctx.beginPath();ctx.arc(sp[hd][0],sp[hd][1],t.dot,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al})`;ctx.fill();
   if(p<.10){const pu=1-p/.10;ctx.beginPath();ctx.arc(sp[0][0],sp[0][1],8*pu+1,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al*.22*pu})`;ctx.fill();ctx.beginPath();ctx.arc(sp[0][0],sp[0][1],t.dot*.8,0,Math.PI*2);ctx.fillStyle=`rgba(${col},${al*.85})`;ctx.fill();}
   ctx.restore();
@@ -879,10 +822,8 @@ function draw(){
   ctx.beginPath();pg(d3.geoGraticule().step([20,20])());ctx.strokeStyle='rgba(40,80,140,.2)';ctx.lineWidth=.4;ctx.stroke();
   if(world){topojson.feature(world,world.objects.countries).features.forEach(f=>{ctx.beginPath();pg(f);if(selId!==null&&parseInt(f.id)===selId){ctx.fillStyle='#0d4a9a';ctx.strokeStyle='#4ab0ff';ctx.lineWidth=1.2;}else{ctx.fillStyle='#0d2238';ctx.strokeStyle='#1a3a55';ctx.lineWidth=.4;}ctx.fill();ctx.stroke();});}
   const sorted=[...arcs].sort((a,b)=>a.tier-b.tier);
-  sorted.forEach(a=>{a.p+=a.t.speed;drawArc(a);});
-  arcs=arcs.filter(a=>a.p<1.05);
-  spawnTick++;
-  const megaCount=arcs.filter(a=>a.tier===4).length;
+  sorted.forEach(a=>{a.p+=a.t.speed;drawArc(a);});arcs=arcs.filter(a=>a.p<1.05);
+  spawnTick++;const megaCount=arcs.filter(a=>a.tier===4).length;
   if(arcs.length<MAX_ARCS||(megaCount<2&&arcs.length<MAX_ARCS+2))if(spawnTick%28===0)spawnArc();
   ctx.restore();
   ctx.beginPath();ctx.arc(cx,cy,sc,0,Math.PI*2);ctx.strokeStyle='rgba(58,154,255,.15)';ctx.lineWidth=1.5;ctx.stroke();
