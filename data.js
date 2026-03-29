@@ -1,12 +1,50 @@
 /**
  * data.js — RemitMap editable data layer
  * ─────────────────────────────────────────────────────────────────────────────
- * Edit on GitHub and Netlify auto-deploys in ~30 seconds.
+ * Edit on GitHub → Netlify auto-deploys in ~30 seconds.
  *
- * DATA SOURCES:
- *   MNO:       GSMA Intelligence, TeleGeography, operator earnings (Q1 2025)
- *   Providers: World Bank RPW Q1 2025, Monito.com, provider websites
- *   Telcoin:   telcoin.network, confirmed MNO partnerships (Q1 2025)
+ * ── DATA SOURCES & ACCURACY NOTES ────────────────────────────────────────────
+ *
+ * REMITTANCE VOLUMES (auto-fetched live — NOT from this file):
+ *   Source:  World Bank / IMF Balance of Payments Statistics
+ *   API:     api.worldbank.org (indicators BX.TRF.PWKR.CD.DT,
+ *            BM.TRF.PWKR.CD.DT, BX.TRF.PWKR.DT.GD.ZS)
+ *   Quality: Gold standard. Compiled from central bank reports across 214
+ *            countries. Annual data; 2023 figures available, 2024 estimates
+ *            published Jan 2025 (World Bank Migration & Development Brief 40).
+ *   Limit:   Excludes informal/hawala flows — true totals are higher.
+ *
+ * FX RATES (auto-fetched live — NOT from this file):
+ *   Primary: Frankfurter (api.frankfurter.dev) — European Central Bank
+ *            official reference rates. Most authoritative free source for
+ *            ~32 major currencies. Updated daily ~16:00 CET on business days.
+ *   Fallback: ExchangeRate-API (exchangerate-api.com) — commercial aggregator
+ *            used for emerging-market currencies not covered by ECB
+ *            (NGN, BDT, NPR, GHS, GTQ etc.).
+ *
+ * MNO SUBSCRIBER DATA (this file — manual update required):
+ *   Source:  GSMA Intelligence (definitive source, paywalled), supplemented by
+ *            publicly reported operator earnings calls and GSMA free summaries,
+ *            TeleGeography GlobalComms, and carrier press releases.
+ *   Quality: Best freely available. GSMA Intelligence full database requires
+ *            ~$50K/year subscription. Figures reflect Q1 2025 public data.
+ *   Update:  Edit MNO_DATA below and commit to GitHub each quarter.
+ *
+ * PROVIDER FEE DATA (this file — manual update required):
+ *   Source:  World Bank Remittance Prices Worldwide (RPW) — Q1 2025 report.
+ *            Cross-referenced with Monito.com and provider websites.
+ *            RPW covers 367 corridors, 48 sending → 105 receiving countries.
+ *   Quality: Best public source. Updated quarterly by World Bank.
+ *   Update:  Check remittanceprices.worldbank.org each quarter and update fees.
+ *
+ * LEADERBOARD / CORRIDOR VOLUMES (index.html — hardcoded):
+ *   Source:  World Bank Migration & Development Brief 40 (Jan 2025).
+ *            Top recipient figures are 2024 estimates confirmed by WB/KNOMAD.
+ *   Quality: These match official World Bank published estimates exactly.
+ *
+ * GLOBAL COUNTER ($905B annual):
+ *   Source:  World Bank/GMDAC 2024 estimate — total global remittance flows
+ *            including high-income country recipients.
  *
  * Last manual review: March 2025
  */
