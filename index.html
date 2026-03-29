@@ -437,7 +437,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       </div>
       <div id="telcoin-section"></div>
       <div id="providers-list"></div>
-      <div class="disc">Rates for $200 USD · World Bank RPW Q1 2025 · Confirm on provider site before sending</div>
+      <div class="disc">Provider fees: World Bank RPW Q1 2025 · Remittance volumes: World Bank/IMF BOP · FX rates: ECB / ExchangeRate-API · Always confirm live rates before sending</div>
     </div>
   </div>
 
@@ -645,12 +645,36 @@ const PER_SEC=905e9/365.25/86400;
 function gcTick(){const now=new Date(),sod=new Date(now);sod.setHours(0,0,0,0);const v=(now-sod)/1000*PER_SEC;const s=v>=1e9?'$'+(v/1e9).toFixed(2)+'B':'$'+(v/1e6).toFixed(0)+'M';const el=g('gc-value');if(el)el.textContent=s;}
 gcTick();setInterval(gcTick,1000);
 
-// ── FX DATA ───────────────────────────────────────────────────────────────────
-const FX_CACHE_PREFIX='fx_v4_';
-let fxRates={},fxTs=null,baseCurrency='USD';
+// ── FX DATA ─────────────────────────────────────────────────────────────────
+// DUAL-SOURCE STRATEGY (most accurate free approach available):
+//   1. Frankfurter (api.frankfurter.dev) — PRIMARY
+//      Source: European Central Bank (ECB) official reference rates
+//      Covers: ~32 major currencies. Updated daily ~16:00 CET on business days.
+//      No key, no rate limits, fully open source, transparent provenance.
+//   2. ExchangeRate-API — FALLBACK
+//      Used for currencies not covered by ECB (NGN, BDT, NPR, GHS, GTQ etc.)
+//      Commercial aggregator, broader coverage, less authoritative source.
+// Rates cached 1hr in sessionStorage per base currency.
+
+const FX_CACHE_PREFIX='fx_v5_';  // bumped — forces fresh fetch on deploy
+let fxRates={},fxTs=null,fxSource='',baseCurrency='USD';
 let wbData={};
 
-// Populate selects
+// Currencies covered by Frankfurter/ECB (authoritative source)
+const ECB_CURRENCIES=new Set(['AUD','BGN','BRL','CAD','CHF','CNY','CZK','DKK',
+  'EUR','GBP','HKD','HUF','IDR','ILS','INR','ISK','JPY','KRW','MXN','MYR',
+  'NOK','NZD','PHP','PLN','RON','SEK','SGD','THB','TRY','USD','ZAR']);
+
+// Build Frankfurter response into same {code:rate} shape as ExchangeRate-API
+function parseFrankfurter(j, base){
+  // Frankfurter returns {"base":"USD","date":"...","rates":{"AED":3.67,...}}
+  // Rates are vs base, so add base=1 for completeness
+  const out={...j.rates};
+  out[base]=1;
+  return out;
+}
+
+// Populate base currency selects
 function buildBaseSelects(){
   const opts=BASE_OPTIONS.map(o=>`<option value="${o.code}">${o.code}</option>`).join('');
   ['fx-base-select','fx-sheet-base-select'].forEach(id=>{const el=g(id);if(el)el.innerHTML=opts;});
@@ -660,20 +684,73 @@ buildBaseSelects();
 async function loadFX(base){
   base=base||'USD';
   const cacheKey=FX_CACHE_PREFIX+base;
-  try{const c=JSON.parse(sessionStorage.getItem(cacheKey)||'{}');if(c.ts&&Date.now()-c.ts<3600000){fxRates=c.rates||{};fxTs=c.ts;renderFX();return;}}catch(_){}
+  // Cache hit?
   try{
-    const r=await fetch(`https://api.exchangerate-api.com/v4/latest/${base}`);
-    if(!r.ok)throw new Error();const j=await r.json();
-    fxRates=j.rates||{};fxTs=Date.now();
-    sessionStorage.setItem(cacheKey,JSON.stringify({ts:fxTs,rates:fxRates}));
-  }catch(_){fxRates={};fxTs=null;}
+    const c=JSON.parse(sessionStorage.getItem(cacheKey)||'{}');
+    if(c.ts&&Date.now()-c.ts<3600000){
+      fxRates=c.rates||{};fxTs=c.ts;fxSource=c.source||'';renderFX();return;
+    }
+  }catch(_){}
+
+  // Source 1: Frankfurter (ECB) — most authoritative for major currencies
+  let loaded=false;
+  try{
+    const r=await fetch(`https://api.frankfurter.dev/v1/latest?base=${base}`,
+      {signal:AbortSignal.timeout(7000)});
+    if(r.ok){
+      const j=await r.json();
+      fxRates=parseFrankfurter(j,base);
+      fxTs=Date.now();fxSource='ECB via Frankfurter';loaded=true;
+    }
+  }catch(_){}
+
+  // Source 2: ExchangeRate-API — fallback, broader emerging-market coverage
+  if(!loaded){
+    try{
+      const r=await fetch(`https://api.exchangerate-api.com/v4/latest/${base}`,
+        {signal:AbortSignal.timeout(8000)});
+      if(r.ok){
+        const j=await r.json();
+        fxRates=j.rates||{};fxTs=Date.now();fxSource='ExchangeRate-API';loaded=true;
+      }
+    }catch(_){}
+  }
+
+  // Merge: if Frankfurter loaded but is missing some emerging-market currencies,
+  // top them up from a cached ExchangeRate-API response for USD base
+  if(loaded&&fxSource.includes('ECB')){
+    try{
+      const fallback=JSON.parse(sessionStorage.getItem(FX_CACHE_PREFIX+'USD_era')||'{}');
+      if(fallback.rates){
+        // Convert fallback rates to the requested base if not USD
+        const baseInUSD=base==='USD'?1:(fallback.rates[base]||null);
+        if(baseInUSD){
+          Object.entries(fallback.rates).forEach(([code,rate])=>{
+            if(!fxRates[code]&&!ECB_CURRENCIES.has(code)){
+              fxRates[code]=(rate/baseInUSD);
+            }
+          });
+        }
+      }
+    }catch(_){}
+  }
+
+  if(loaded){
+    sessionStorage.setItem(cacheKey,JSON.stringify({ts:fxTs,rates:fxRates,source:fxSource}));
+    // Also cache a USD ExchangeRate-API response as the emerging-market supplement
+    if(fxSource==='ExchangeRate-API'&&base==='USD'){
+      sessionStorage.setItem(FX_CACHE_PREFIX+'USD_era',
+        JSON.stringify({ts:fxTs,rates:fxRates}));
+    }
+  }else{
+    fxRates={};fxTs=null;fxSource='';
+  }
   renderFX();
   if(currentCountry&&activeTab==='providers')renderProviders(currentCountry);
 }
 
 async function setBaseCurrency(base){
   baseCurrency=base;
-  // Sync both selects
   ['fx-base-select','fx-sheet-base-select'].forEach(id=>{const el=g(id);if(el)el.value=base;});
   g('fx-vs-label').textContent=base;
   await loadFX(base);
@@ -681,8 +758,8 @@ async function setBaseCurrency(base){
 
 loadFX('USD');
 setInterval(()=>{
-  const cacheKey=FX_CACHE_PREFIX+baseCurrency;
-  sessionStorage.removeItem(cacheKey);loadFX(baseCurrency);
+  sessionStorage.removeItem(FX_CACHE_PREFIX+baseCurrency);
+  loadFX(baseCurrency);
 },3600000);
 
 // ── WORLD BANK ────────────────────────────────────────────────────────────────
@@ -693,7 +770,7 @@ function fmtP(v){return v&&!isNaN(v)?(+v).toFixed(1)+'% of GDP':'';}
 async function wbOne(iso2,ind){const r=await fetch(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrv=3&per_page=3`,{signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error();const j=await r.json();for(const e of(j[1]||[]))if(e.value!==null)return{value:e.value,year:e.date};return null;}
 async function loadWB(){
   try{const c=JSON.parse(localStorage.getItem(WB_KEY)||'{}');if(c.ts&&Date.now()-c.ts<7*86400000){wbData=c.data||{};const d=new Date(c.ts);setStatus('cached',`WB CACHED ${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`);if(currentCountry)refreshOv();return;}}catch(_){}
-  setStatus('loading','FETCHING WORLD BANK…');
+  setStatus('loading','FETCHING WORLD BANK/IMF DATA…');
   const res={},entries=Object.entries(ISO2),B=5;
   for(let i=0;i<entries.length;i+=B){
     await Promise.allSettled(entries.slice(i,i+B).map(async([nm,iso])=>{
@@ -705,7 +782,7 @@ async function loadWB(){
   }
   wbData=res;try{localStorage.setItem(WB_KEY,JSON.stringify({ts:Date.now(),data:wbData}));}catch(_){}
   const n=Object.values(wbData).filter(v=>v.inflow||v.outflow).length;
-  setStatus('live',`WORLD BANK LIVE · ${n} COUNTRIES`);
+  setStatus('live',`WORLD BANK/IMF BOP LIVE · ${n} COUNTRIES`);
   if(currentCountry)refreshOv();
 }
 loadWB();
@@ -739,8 +816,9 @@ function renderFX(){
       `<span class="fx-rate${rate?' loaded':''}">${fmtRate(rate,baseCurrency)}</span>`+
       `</div>`;
   }).join('');
-  const ts=fxTs?'UPDATED '+new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'UNAVAILABLE';
-  footer.textContent=`1 ${baseCurrency} = X · ${ts}`;
+  const ts=fxTs?new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+  const srcLabel=fxSource.includes('ECB')?'ECB · EUROPEAN CENTRAL BANK':fxSource.includes('ExchangeRate')?'EXCHANGERATE-API':'–';
+  footer.textContent=fxTs?`SOURCE: ${srcLabel} · UPDATED ${ts}`:'RATE DATA UNAVAILABLE';
   if(mobFxOpen)renderFXSheet();
 }
 
@@ -756,7 +834,7 @@ function renderFXSheet(){
       `<span class="fx-sheet-rate${rate?' loaded':''}">${fmtRate(rate,baseCurrency)}</span>`+
       `</div>`;
   }).join('');
-  footer.textContent=fxTs?`1 ${baseCurrency} = X · Updated ${new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`:'Rate data unavailable';
+  footer.textContent=fxTs?`SOURCE: ${fxSource.includes('ECB')?'ECB':'ERA'} · Updated ${new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`:'Rate data unavailable';
 }
 
 function fxClick(code){
