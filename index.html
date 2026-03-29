@@ -727,7 +727,7 @@ gcTick();setInterval(gcTick,1000);
 //      Commercial aggregator, broader coverage, less authoritative source.
 // Rates cached 1hr in sessionStorage per base currency.
 
-const FX_CACHE_PREFIX='fx_v5_';  // bumped — forces fresh fetch on deploy
+const FX_CACHE_PREFIX='fx_v6_';  // bumped — forces fresh fetch on deploy
 let fxRates={},fxTs=null,fxSource='',baseCurrency='USD';
 let wbData={};
 
@@ -755,64 +755,58 @@ buildBaseSelects();
 async function loadFX(base){
   base=base||'USD';
   const cacheKey=FX_CACHE_PREFIX+base;
-  // Cache hit?
+  // Cache hit — serve immediately, still refresh in background if >50min old
   try{
     const c=JSON.parse(sessionStorage.getItem(cacheKey)||'{}');
     if(c.ts&&Date.now()-c.ts<3600000){
-      fxRates=c.rates||{};fxTs=c.ts;fxSource=c.source||'';renderFX();return;
+      fxRates=c.rates||{};fxTs=c.ts;fxSource=c.source||'';renderFX();
+      // Background refresh after 50 min so rates stay fresh
+      if(Date.now()-c.ts>3000000)setTimeout(()=>_fetchFX(base),100);
+      return;
     }
   }catch(_){}
+  await _fetchFX(base);
+}
 
-  // Source 1: Frankfurter (ECB) — most authoritative for major currencies
-  let loaded=false;
-  try{
-    const r=await fetch(`https://api.frankfurter.dev/v1/latest?base=${base}`,
-      {signal:AbortSignal.timeout(7000)});
-    if(r.ok){
-      const j=await r.json();
-      fxRates=parseFrankfurter(j,base);
-      fxTs=Date.now();fxSource='ECB via Frankfurter';loaded=true;
-    }
-  }catch(_){}
+// Always fires BOTH sources in parallel and merges — ECB for major, ERA for emerging
+async function _fetchFX(base){
+  const merged={};
+  let ecbOk=false,eraOk=false;
 
-  // Source 2: ExchangeRate-API — fallback, broader emerging-market coverage
-  if(!loaded){
+  const [ecbRes,eraRes]=await Promise.allSettled([
+    fetch(`https://api.frankfurter.dev/v1/latest?base=${base}`,
+      {signal:AbortSignal.timeout(8000)}),
+    fetch(`https://api.exchangerate-api.com/v4/latest/${base}`,
+      {signal:AbortSignal.timeout(8000)}),
+  ]);
+
+  // Parse ExchangeRate-API first (broader coverage, use as base layer)
+  if(eraRes.status==='fulfilled'&&eraRes.value.ok){
     try{
-      const r=await fetch(`https://api.exchangerate-api.com/v4/latest/${base}`,
-        {signal:AbortSignal.timeout(8000)});
-      if(r.ok){
-        const j=await r.json();
-        fxRates=j.rates||{};fxTs=Date.now();fxSource='ExchangeRate-API';loaded=true;
-      }
+      const j=await eraRes.value.json();
+      Object.assign(merged,j.rates||{});
+      eraOk=true;
     }catch(_){}
   }
 
-  // Merge: if Frankfurter loaded but is missing some emerging-market currencies,
-  // top them up from a cached ExchangeRate-API response for USD base
-  if(loaded&&fxSource.includes('ECB')){
+  // Parse ECB/Frankfurter and OVERRIDE major currencies with its authoritative rates
+  if(ecbRes.status==='fulfilled'&&ecbRes.value.ok){
     try{
-      const fallback=JSON.parse(sessionStorage.getItem(FX_CACHE_PREFIX+'USD_era')||'{}');
-      if(fallback.rates){
-        // Convert fallback rates to the requested base if not USD
-        const baseInUSD=base==='USD'?1:(fallback.rates[base]||null);
-        if(baseInUSD){
-          Object.entries(fallback.rates).forEach(([code,rate])=>{
-            if(!fxRates[code]&&!ECB_CURRENCIES.has(code)){
-              fxRates[code]=(rate/baseInUSD);
-            }
-          });
-        }
-      }
+      const j=await ecbRes.value.json();
+      const ecbRates=parseFrankfurter(j,base);
+      // ECB rates take precedence for currencies it covers
+      Object.assign(merged,ecbRates);
+      ecbOk=true;
     }catch(_){}
   }
 
-  if(loaded){
-    sessionStorage.setItem(cacheKey,JSON.stringify({ts:fxTs,rates:fxRates,source:fxSource}));
-    // Also cache a USD ExchangeRate-API response as the emerging-market supplement
-    if(fxSource==='ExchangeRate-API'&&base==='USD'){
-      sessionStorage.setItem(FX_CACHE_PREFIX+'USD_era',
-        JSON.stringify({ts:fxTs,rates:fxRates}));
-    }
+  if(ecbOk||eraOk){
+    merged[base]=1; // always include self
+    fxRates=merged;
+    fxTs=Date.now();
+    fxSource=ecbOk&&eraOk?'ECB + ExchangeRate-API':ecbOk?'ECB via Frankfurter':'ExchangeRate-API';
+    sessionStorage.setItem(FX_CACHE_PREFIX+base,
+      JSON.stringify({ts:fxTs,rates:fxRates,source:fxSource}));
   }else{
     fxRates={};fxTs=null;fxSource='';
   }
