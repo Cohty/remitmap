@@ -5,6 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>RemitMap — Global MNO & Remittance Explorer</title>
 <meta name="description" content="Live globe showing mobile operators, remittance flows, and cheapest transfer providers for every country.">
+
+  <!-- ── PWA ── -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#030810">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- iOS PWA support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RemitMap">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png">
+  <link rel="apple-touch-icon" sizes="128x128" href="/icons/icon-128.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="96x96"   href="/icons/icon-96.png">
+  <link rel="shortcut icon"         href="/icons/icon-96.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="data.js"></script>
@@ -867,7 +886,7 @@ function renderProviders(name){
       return `<div class="tel-card" style="margin-bottom:8px">
         <div class="tel-header">
           <div class="tel-name-row">
-            <div class="tel-logo"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="7" fill="url(#tlg)"/><defs><linearGradient id="tlg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00E5FF"/><stop offset="100%" stop-color="#0055FF"/></linearGradient></defs><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="13" fill="white" letter-spacing="-0.5">TEL</text></svg></div>
+            <div class="tel-logo"><img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAgACADASIAAhEBAxEB/8QAGQABAQADAQAAAAAAAAAAAAAABwUBAwgG/8QANBAAAQMCAgYHBwUAAAAAAAAAAQIDBAURAAYHCBITIUEVGDFRZ6XkFCIkYXGRsUNSgZKh/8QAGAEBAAMBAAAAAAAAAAAAAAAAAgEDBQb/xAAmEQABAwMEAQQDAAAAAAAAAAABAgMEAAURBiExUcEiI0FhobHw/9oADAMBAAIRAxEAPwDR1H/E7yH1GIlZ1SqBSbpl6YGi6P0mqFvF/YSOH82x17pKmrg5NnONLKHHQllJBsRtKAP+XwTZMobVcrAiPS24zCE7x3960jtCfnbny+eN222tp9hUh9RCU9f3iuQv2oZEOWiFEQFOLHJOwySB113QvljVNo+YHVsQ9KTjUhPEMvZfCVKHen4k3/Ixf6j/AIn+Q+ox7+qx0UypJMGox5AB3jTsV1R3fE2BVYe99MMWjmsTK3lpMqfsl5DqmisC28At7xHfxwrtaExkB9k+g/B5FV6c1K5OdVEkp9wb5HBHg/g/VY0kUaZXMuezQbKeaeS8GybbywIsDyPHhgpyrUmqHVZPSMWTsOx3IrqUWS61tWuQFcxbng168Hhh596fEHMmtnRq++iRN0VuIfRwLrOYNhSx3K+G4/nBtl1Qw0Y74yg9cinftOuy5CZ0RQDqcbHg4/Xn6NKlRMETHOjxITEuN0HyC5a3O3Dtv2YcdH0BynZPp8d5stuqQXVpULEFRJsR9CMcg0XW8olHsYOiBlDgFt6qu7bn9jHv9sV+vB4Y+fenxN2vCZjaWmwQAc5PJo6c0wu1vKkvKBUoYwBsMnPjoV//2Q==" alt="Telcoin" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:7px"></div>
             <span class="tel-name">${medal} Telcoin</span>
           </div>
           <div class="tel-badges">
@@ -961,6 +980,32 @@ fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
     world=w;countries=topojson.feature(world,world.objects.countries).features;draw();
     [4,4,3,3,2,2,1].forEach((tier,i)=>{setTimeout(()=>{const pool=CORRIDORS.filter(c=>c.tier===tier).sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;const t=TIER[c.tier];arcs.push({gp:buildPts(fr,to),tier:c.tier,t,p:0});break;}},i*280);});
   });
+</script>
+<!-- ── PWA SERVICE WORKER REGISTRATION ── -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[RemitMap] SW registered, scope:', reg.scope))
+      .catch(err => console.warn('[RemitMap] SW registration failed:', err));
+  });
+}
+
+// Handle manifest shortcuts (?open=leaderboard / ?open=fx)
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const open = params.get('open');
+  if (open === 'leaderboard') {
+    // Auto-open leaderboard after globe loads
+    setTimeout(() => { if (typeof toggleLB === 'function') toggleLB(); }, 1200);
+  } else if (open === 'fx') {
+    // Auto-open FX sheet on mobile after globe loads
+    setTimeout(() => {
+      if (window.innerWidth <= 680 && typeof toggleMobFX === 'function') toggleMobFX();
+      else if (typeof toggleFX === 'function' && !fxOpen) toggleFX();
+    }, 1200);
+  }
+});
 </script>
 </body>
 </html>
