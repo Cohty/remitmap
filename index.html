@@ -226,7 +226,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .tel-about-arrow{font-size:8px;transition:transform .25s}
 .tel-about-arrow.open{transform:rotate(180deg)}
 .tel-about-body{overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(.4,0,.2,1);font-family:'Space Mono',monospace}
-.tel-about-body.open{max-height:400px}
+.tel-about-body.open{max-height:460px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.2) transparent}
+.tel-about-body.open::-webkit-scrollbar{width:3px}
+.tel-about-body.open::-webkit-scrollbar-thumb{background:rgba(0,229,255,.2);border-radius:2px}
 .tel-about-desc{font-size:8.5px;color:#7aa8cc;line-height:1.65;padding:9px 0 8px}
 .tel-about-links{display:flex;flex-direction:column;gap:5px}
 .tel-about-link{display:flex;align-items:center;gap:9px;padding:7px 10px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.07);border-radius:7px;text-decoration:none;transition:background .12s}
@@ -806,8 +808,8 @@ function renderProviders(name){
       <div class="tel-about-links">
         <a class="tel-about-link" href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener"><span class="tel-about-link-icon">📱</span><div class="tel-about-link-info"><div class="tel-about-link-label">DOWNLOAD THE APP</div><div class="tel-about-link-sub">telco.in · iOS & Android · Referral included</div></div><span class="tel-about-link-arr">↗</span></a>
         <a class="tel-about-link" href="https://www.telco.in/en" target="_blank" rel="noopener"><span class="tel-about-link-icon">🌐</span><div class="tel-about-link-info"><div class="tel-about-link-label">OFFICIAL WEBSITE</div><div class="tel-about-link-sub">telco.in · Full product overview</div></div><span class="tel-about-link-arr">↗</span></a>
-        <a class="tel-about-link" href="https://x.com/telcoin" target="_blank" rel="noopener"><span class="tel-about-link-icon">𝕏</span><div class="tel-about-link-info"><div class="tel-about-link-label">@TELCOIN ON X</div><div class="tel-about-link-sub">Latest news, partnerships, announcements</div></div><span class="tel-about-link-arr">↗</span></a>
-        <a class="tel-about-link" href="https://x.com/TelcoinTAO" target="_blank" rel="noopener"><span class="tel-about-link-icon">𝕏</span><div class="tel-about-link-info"><div class="tel-about-link-label">@TELCOINTAO ON X</div><div class="tel-about-link-sub">Telcoin Association · Governance & ecosystem</div></div><span class="tel-about-link-arr">↗</span></a>
+        <a class="tel-about-link" href="https://x.com/telcoin" target="_blank" rel="noopener"><span class="tel-about-link-icon" style="font-family:'Arial Black',sans-serif;font-weight:900;font-size:14px;color:#e8f4ff">X</span><div class="tel-about-link-info"><div class="tel-about-link-label">TELCOIN ON X</div><div class="tel-about-link-sub">Latest news, partnerships, announcements</div></div><span class="tel-about-link-arr">↗</span></a>
+        <a class="tel-about-link" href="https://x.com/TelcoinTAO" target="_blank" rel="noopener"><span class="tel-about-link-icon" style="font-family:'Arial Black',sans-serif;font-weight:900;font-size:14px;color:#e8f4ff">X</span><div class="tel-about-link-info"><div class="tel-about-link-label">TELCOIN ASSOCIATION ON X</div><div class="tel-about-link-sub">Governance &amp; ecosystem updates</div></div><span class="tel-about-link-arr">↗</span></a>
         <a class="tel-about-link" href="https://t.me/Telcoin_Announcements" target="_blank" rel="noopener"><span class="tel-about-link-icon">✈️</span><div class="tel-about-link-info"><div class="tel-about-link-label">TELEGRAM ANNOUNCEMENTS</div><div class="tel-about-link-sub">t.me/Telcoin_Announcements</div></div><span class="tel-about-link-arr">↗</span></a>
         <a class="tel-about-link" href="https://www.coingecko.com/en/coins/telcoin" target="_blank" rel="noopener"><span class="tel-about-link-icon">📊</span><div class="tel-about-link-info"><div class="tel-about-link-label">TEL TOKEN (TEL)</div><div class="tel-about-link-sub">CoinGecko · Live price, market cap, charts</div></div><span class="tel-about-link-arr">↗</span></a>
       </div>
@@ -865,7 +867,7 @@ function renderProviders(name){
       return `<div class="tel-card" style="margin-bottom:8px">
         <div class="tel-header">
           <div class="tel-name-row">
-            <div class="tel-logo"><img src="https://assets.coingecko.com/coins/images/9905/standard/telcoin.png?1696509997" alt="Telcoin" onerror="this.parentElement.style.background='linear-gradient(135deg,#00E5FF,#0066FF)';this.style.display='none'"></div>
+            <div class="tel-logo"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="7" fill="url(#tlg)"/><defs><linearGradient id="tlg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00E5FF"/><stop offset="100%" stop-color="#0055FF"/></linearGradient></defs><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="13" fill="white" letter-spacing="-0.5">TEL</text></svg></div>
             <span class="tel-name">${medal} Telcoin</span>
           </div>
           <div class="tel-badges">
