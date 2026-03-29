@@ -763,23 +763,19 @@ function toggleTelAbout(){
 }
 window.toggleTelAbout=toggleTelAbout;
 
-// ── TELCOIN + PROVIDERS RENDER ────────────────────────────────────────────────
+// ── PROVIDERS RENDER — honest cost ranking ────────────────────────────────────
+// All providers including Telcoin are sorted by actual total cost.
+// Telcoin earns its rank — it only shows "LOWEST COST" if it genuinely is #1.
 function renderProviders(name){
   const cur=window.CURRENCY?.[name]||'LOCAL';
   const allProvs=window.PROVIDERS?.[name]||window.PROVIDERS?.['default']||[];
-  // Always use USD rates for provider calculations (providers quote USD→local)
+  const isMNO=window.TELCOIN_MNO_COUNTRIES?.has(name);
   const usdRates=baseCurrency==='USD'?fxRates:(()=>{
-    // Convert: if base is X, rate[USD] = 1/fxRates[USD] ... but we need USD base
-    // Best approach: re-use USD session cache if available
     try{const c=JSON.parse(sessionStorage.getItem(FX_CACHE_PREFIX+'USD')||'{}');return c.rates||{};}catch(_){return {};}
   })();
   const rate=usdRates[cur];
 
-  const telProv=allProvs.find(p=>p.telcoin);
-  const tradProvs=allProvs.filter(p=>!p.telcoin).slice(0,3);
-  const isMNO=window.TELCOIN_MNO_COUNTRIES?.has(name);
-
-  // Mid-market bar (always USD base for send-money context)
+  // Mid-market bar
   g('mm-label').textContent=`MID-MARKET RATE · USD → ${cur}`;
   if(rate){
     const d=rate>100?0:rate>10?2:4;
@@ -789,143 +785,129 @@ function renderProviders(name){
     g('mm-upd').style.display='none';
   }else{g('mm-value').textContent='–';g('mm-time').textContent='';g('mm-upd').style.display='flex';}
 
-  // ── TELCOIN CARD ──────────────────────────────────────────────────────────
-  const telSection=g('telcoin-section');
-  if(telProv){
-    const telTotal=(telProv.fee_usd/200*100+telProv.fx_pct).toFixed(2);
-    const tradCosts=tradProvs.map(p=>p.fee_usd/200*100+p.fx_pct);
-    const tradAvg=tradCosts.length?tradCosts.reduce((a,b)=>a+b,0)/tradCosts.length:3.5;
+  // Clear the always-pinned Telcoin section — ranking is now inline
+  g('telcoin-section').innerHTML='';
 
-    let telRecvHTML='',savingsHTML='';
+  // Sort ALL providers by total cost — Telcoin competes on equal footing
+  const ranked=[...allProvs]
+    .map(p=>({...p,totalCost:p.fee_usd/200*100+p.fx_pct}))
+    .sort((a,b)=>a.totalCost-b.totalCost)
+    .slice(0,4);
+
+  const medals=['🥇','🥈','🥉','4️⃣'];
+
+  const aboutHTML=`<div class="tel-about">
+    <div class="tel-about-toggle" onclick="toggleTelAbout()">
+      <span>ABOUT TELCOIN</span>
+      <span class="tel-about-arrow" id="tel-about-arrow">▼</span>
+    </div>
+    <div class="tel-about-body" id="tel-about-body">
+      <div class="tel-about-desc">Telcoin is a blockchain-powered remittance network that partners directly with mobile network operators worldwide. Their mission is to give every mobile phone user access to affordable, near-instant financial services — cutting the hidden fees charged by traditional transfer operators.</div>
+      <div class="tel-about-links">
+        <a class="tel-about-link" href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener"><span class="tel-about-link-icon">📱</span><div class="tel-about-link-info"><div class="tel-about-link-label">DOWNLOAD THE APP</div><div class="tel-about-link-sub">telco.in · iOS & Android · Referral included</div></div><span class="tel-about-link-arr">↗</span></a>
+        <a class="tel-about-link" href="https://www.telco.in/en" target="_blank" rel="noopener"><span class="tel-about-link-icon">🌐</span><div class="tel-about-link-info"><div class="tel-about-link-label">OFFICIAL WEBSITE</div><div class="tel-about-link-sub">telco.in · Full product overview</div></div><span class="tel-about-link-arr">↗</span></a>
+        <a class="tel-about-link" href="https://x.com/telcoin" target="_blank" rel="noopener"><span class="tel-about-link-icon">𝕏</span><div class="tel-about-link-info"><div class="tel-about-link-label">@TELCOIN ON X</div><div class="tel-about-link-sub">Latest news, partnerships, announcements</div></div><span class="tel-about-link-arr">↗</span></a>
+        <a class="tel-about-link" href="https://x.com/TelcoinTAO" target="_blank" rel="noopener"><span class="tel-about-link-icon">𝕏</span><div class="tel-about-link-info"><div class="tel-about-link-label">@TELCOINTAO ON X</div><div class="tel-about-link-sub">Telcoin Association · Governance & ecosystem</div></div><span class="tel-about-link-arr">↗</span></a>
+        <a class="tel-about-link" href="https://t.me/Telcoin_Announcements" target="_blank" rel="noopener"><span class="tel-about-link-icon">✈️</span><div class="tel-about-link-info"><div class="tel-about-link-label">TELEGRAM ANNOUNCEMENTS</div><div class="tel-about-link-sub">t.me/Telcoin_Announcements</div></div><span class="tel-about-link-arr">↗</span></a>
+        <a class="tel-about-link" href="https://www.coingecko.com/en/coins/telcoin" target="_blank" rel="noopener"><span class="tel-about-link-icon">📊</span><div class="tel-about-link-info"><div class="tel-about-link-label">TEL TOKEN (TEL)</div><div class="tel-about-link-sub">CoinGecko · Live price, market cap, charts</div></div><span class="tel-about-link-arr">↗</span></a>
+      </div>
+    </div>
+  </div>`;
+
+  const cards=ranked.map((p,i)=>{
+    const tot=p.totalCost.toFixed(2);
+    const feeD=p.fee_usd===0?'FREE':'$'+p.fee_usd.toFixed(2);
+    const fxD=p.fx_pct===0?'MID-MARKET':'+'+p.fx_pct+'%';
+    const medal=medals[i]||String(i+1);
+    const isCheap=+tot<1.5;
+
+    // Recipient gets
+    let recvHTML='';
     if(rate&&cur!=='USD'){
-      const telEff=rate*(1-telProv.fx_pct/100);
-      const telGets=(200-telProv.fee_usd)*telEff;
-      const d=telGets>1000?0:2;
-      const tradEffAvg=rate*(1-(tradProvs.reduce((a,p)=>a+p.fx_pct,0)/(tradProvs.length||1)/100));
-      const tradGets=(200-(tradProvs.reduce((a,p)=>a+p.fee_usd,0)/(tradProvs.length||1)))*tradEffAvg;
-      const savedAmt=Math.max(0,telGets-tradGets);
-      const savedStr=savedAmt.toLocaleString(undefined,{maximumFractionDigits:savedAmt>100?0:2});
-      telRecvHTML=`<div class="tel-recv">$200 → <span class="amt">${telGets.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}</span></div>`;
-      if(+telTotal<tradAvg-0.1){
-        const tradBarW=Math.min(100,(tradAvg/+telTotal)*100);
-        savingsHTML=`<div class="tel-savings">
-          <div class="tel-savings-label"><span>COST COMPARISON · $200 TRANSFER</span><span class="tel-savings-highlight">SAVE ~${cur} ${savedStr}</span></div>
-          <div style="position:relative;height:6px">
-            <div class="tel-bar-wrap"><div class="tel-bar-trad" style="width:${Math.min(100,tradBarW).toFixed(0)}%"></div><div class="tel-bar-tel" style="width:100%;position:absolute;top:0;left:0"></div></div>
-          </div>
-          <div class="tel-bar-labels"><span class="tel-bar-l">TELCOIN ~${telTotal}%</span><span class="tel-bar-r">TRAD. AVG ~${tradAvg.toFixed(1)}%</span></div>
-        </div>`;
-      }
+      const eff=rate*(1-p.fx_pct/100),gets=(200-p.fee_usd)*eff;
+      const d=gets>1000?0:2;
+      recvHTML=`<div class="${p.telcoin?'tel-recv':'prov-recv'}">${p.telcoin?'$200 → <span class="amt">':'$200 → <span>'}${gets.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}</span></div>`;
     }else if(cur==='USD'){
-      telRecvHTML=`<div class="tel-recv">$200 → <span class="amt">$${(200-telProv.fee_usd).toFixed(2)} USD</span></div>`;
+      recvHTML=`<div class="${p.telcoin?'tel-recv':'prov-recv'}">${p.telcoin?'$200 → <span class="amt">':'$200 → <span>'}$${(200-p.fee_usd).toFixed(2)} USD</span></div>`;
     }else{
-      telRecvHTML=`<div class="tel-recv" style="opacity:.5">Calculating…</div>`;
+      recvHTML=`<div class="${p.telcoin?'tel-recv':'prov-recv'}" style="opacity:.5">Calculating…</div>`;
     }
 
-    const mnoHTML=isMNO?`<div class="tel-mno-badge"><div class="tel-mno-dot"></div><span class="tel-mno-text">MNO PARTNER · Direct wallet delivery on recipient's mobile network</span></div>`:'';
+    if(p.telcoin){
+      const isLowest=i===0;
+      const rankLabel=isLowest?'LOWEST COST':`RANKED #${i+1}`;
+      const badgeStyle=isLowest
+        ?'background:rgba(0,229,255,.15);border:.5px solid rgba(0,229,255,.4);color:#00E5FF'
+        :'background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.18);color:#a0c8e8';
 
-    // Telcoin About section
-    const aboutHTML=`<div class="tel-about">
-      <div class="tel-about-toggle" onclick="toggleTelAbout()">
-        <span>ABOUT TELCOIN</span>
-        <span class="tel-about-arrow" id="tel-about-arrow">▼</span>
-      </div>
-      <div class="tel-about-body" id="tel-about-body">
-        <div class="tel-about-desc">Telcoin is a blockchain-powered remittance network built on the Ethereum ecosystem that partners directly with mobile network operators worldwide. Their mission is to give every mobile phone user access to affordable, near-instant financial services — eliminating the hidden fees and FX markups charged by traditional money transfer operators. By settling on-chain and delivering into mobile wallets on partner MNO networks, Telcoin cuts costs that have historically been unavoidable.</div>
-        <div class="tel-about-links">
-          <a class="tel-about-link" href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener">
-            <span class="tel-about-link-icon">📱</span>
-            <div class="tel-about-link-info"><div class="tel-about-link-label">DOWNLOAD THE APP</div><div class="tel-about-link-sub">telco.in · iOS &amp; Android · Referral included</div></div>
-            <span class="tel-about-link-arr">↗</span>
-          </a>
-          <a class="tel-about-link" href="https://www.telco.in/en" target="_blank" rel="noopener">
-            <span class="tel-about-link-icon">🌐</span>
-            <div class="tel-about-link-info"><div class="tel-about-link-label">OFFICIAL WEBSITE</div><div class="tel-about-link-sub">telco.in · Full product overview</div></div>
-            <span class="tel-about-link-arr">↗</span>
-          </a>
-          <a class="tel-about-link" href="https://x.com/telcoin" target="_blank" rel="noopener">
-            <span class="tel-about-link-icon">𝕏</span>
-            <div class="tel-about-link-info"><div class="tel-about-link-label">@TELCOIN ON X</div><div class="tel-about-link-sub">Latest news, partnerships, announcements</div></div>
-            <span class="tel-about-link-arr">↗</span>
-          </a>
-          <a class="tel-about-link" href="https://x.com/TelcoinTAO" target="_blank" rel="noopener">
-            <span class="tel-about-link-icon">𝕏</span>
-            <div class="tel-about-link-info"><div class="tel-about-link-label">@TELCOINTAO ON X</div><div class="tel-about-link-sub">Telcoin Association · Governance &amp; ecosystem</div></div>
-            <span class="tel-about-link-arr">↗</span>
-          </a>
-          <a class="tel-about-link" href="https://t.me/Telcoin_Announcements" target="_blank" rel="noopener">
-            <span class="tel-about-link-icon">✈️</span>
-            <div class="tel-about-link-info"><div class="tel-about-link-label">TELEGRAM ANNOUNCEMENTS</div><div class="tel-about-link-sub">t.me/Telcoin_Announcements · Official updates</div></div>
-            <span class="tel-about-link-arr">↗</span>
-          </a>
-          <a class="tel-about-link" href="https://www.coingecko.com/en/coins/telcoin" target="_blank" rel="noopener">
-            <span class="tel-about-link-icon">📊</span>
-            <div class="tel-about-link-info"><div class="tel-about-link-label">TEL TOKEN (TEL)</div><div class="tel-about-link-sub">CoinGecko · Live price, market cap, charts</div></div>
-            <span class="tel-about-link-arr">↗</span>
-          </a>
-        </div>
-      </div>
-    </div>`;
+      // Savings bar — only if Telcoin is genuinely cheaper than competitors
+      let savingsHTML='';
+      if(rate&&cur!=='USD'&&ranked.length>1){
+        const others=ranked.filter((_,j)=>j!==i);
+        const othAvg=others.reduce((a,b)=>a+b.totalCost,0)/others.length;
+        if(othAvg-p.totalCost>0.1){
+          const telEff=rate*(1-p.fx_pct/100),telGets=(200-p.fee_usd)*telEff;
+          const othEff=rate*(1-(others.reduce((a,b)=>a+b.fx_pct,0)/others.length)/100);
+          const othGets=(200-(others.reduce((a,b)=>a+b.fee_usd,0)/others.length))*othEff;
+          const saved=Math.max(0,telGets-othGets);
+          const savedStr=saved.toLocaleString(undefined,{maximumFractionDigits:saved>100?0:2});
+          const tradBarW=Math.min(100,(othAvg/p.totalCost)*100).toFixed(0);
+          savingsHTML=`<div class="tel-savings">
+            <div class="tel-savings-label"><span>COST COMPARISON · $200</span><span class="tel-savings-highlight">SAVE ~${cur} ${savedStr}</span></div>
+            <div style="position:relative;height:6px"><div class="tel-bar-wrap"><div class="tel-bar-trad" style="width:${tradBarW}%"></div><div class="tel-bar-tel" style="width:100%;position:absolute;top:0;left:0"></div></div></div>
+            <div class="tel-bar-labels"><span class="tel-bar-l">TELCOIN ~${tot}%</span><span class="tel-bar-r">OTHERS AVG ~${othAvg.toFixed(1)}%</span></div>
+          </div>`;
+        }
+      }
 
-    telSection.innerHTML=`
-      <div class="slabel">⚡ FEATURED BEST RATE</div>
-      <div class="tel-card">
+      const mnoHTML=isMNO?`<div class="tel-mno-badge"><div class="tel-mno-dot"></div><span class="tel-mno-text">MNO PARTNER · Direct wallet delivery on recipient's mobile network</span></div>`:'';
+
+      return `<div class="tel-card" style="margin-bottom:8px">
         <div class="tel-header">
           <div class="tel-name-row">
-            <div class="tel-logo">
-              <img src="https://assets.coingecko.com/coins/images/9905/standard/telcoin.png?1696509997" alt="Telcoin" onerror="this.parentElement.style.background='linear-gradient(135deg,#00E5FF,#0066FF)';this.style.display='none'">
-            </div>
-            <span class="tel-name">Telcoin</span>
+            <div class="tel-logo"><img src="https://assets.coingecko.com/coins/images/9905/standard/telcoin.png?1696509997" alt="Telcoin" onerror="this.parentElement.style.background='linear-gradient(135deg,#00E5FF,#0066FF)';this.style.display='none'"></div>
+            <span class="tel-name">${medal} Telcoin</span>
           </div>
           <div class="tel-badges">
-            <span class="tel-badge-best">LOWEST COST</span>
+            <span class="tel-badge-best" style="${badgeStyle}">${rankLabel}</span>
             <span class="tel-badge-type">BLOCKCHAIN</span>
           </div>
         </div>
-        <div class="tel-speed">⚡ ${telProv.delivery} &nbsp;·&nbsp; Blockchain-settled, near-instant</div>
+        <div class="tel-speed">⚡ ${p.delivery} · Blockchain-settled</div>
         ${mnoHTML}
         <div class="tel-stats">
-          <div class="tel-stat"><div class="tel-stat-lbl">SEND FEE</div><div class="tel-stat-val">${telProv.fee_usd===0?'FREE':'$'+telProv.fee_usd.toFixed(2)}</div></div>
-          <div class="tel-stat"><div class="tel-stat-lbl">FX MARGIN</div><div class="tel-stat-val">+${telProv.fx_pct}%</div></div>
-          <div class="tel-stat"><div class="tel-stat-lbl">TOTAL COST</div><div class="tel-stat-val">~${telTotal}%</div></div>
+          <div class="tel-stat"><div class="tel-stat-lbl">SEND FEE</div><div class="tel-stat-val">${feeD}</div></div>
+          <div class="tel-stat"><div class="tel-stat-lbl">FX MARGIN</div><div class="tel-stat-val">+${p.fx_pct}%</div></div>
+          <div class="tel-stat"><div class="tel-stat-lbl">TOTAL COST</div><div class="tel-stat-val">~${tot}%</div></div>
         </div>
-        ${telRecvHTML}
+        ${recvHTML}
         ${savingsHTML}
         <a class="tel-cta" href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener">GET STARTED WITH TELCOIN ↗</a>
-        <div class="tel-note">${telProv.note}</div>
+        <div class="tel-note">${p.note}</div>
         ${aboutHTML}
       </div>`;
-    // Restore about state
-    if(telAboutOpen){
-      const b=g('tel-about-body');const a=g('tel-about-arrow');
-      if(b)b.classList.add('open');if(a)a.classList.add('open');
     }
-  }else{telSection.innerHTML='';}
 
-  // ── TRADITIONAL PROVIDERS ─────────────────────────────────────────────────
-  const m=['🥇','🥈','🥉'];
-  const tradHTML=tradProvs.map((p,i)=>{
-    const tot=(p.fee_usd/200*100+p.fx_pct).toFixed(2);
-    const feeD=p.fee_usd===0?'FREE':'$'+p.fee_usd.toFixed(2);
-    const fxD=p.fx_pct===0?'MID-MARKET':'+'+p.fx_pct+'%';
+    // Standard provider card
     const tc=p.type==='digital'?'td':p.type==='bank'?'tb':'ta';
     const tl=p.type==='digital'?'DIGITAL':p.type==='bank'?'BANK':'AGENT';
-    let recv;
-    if(rate&&cur!=='USD'){const eff=rate*(1-p.fx_pct/100),gets=(200-p.fee_usd)*eff;recv=`<div class="prov-recv">$200 → <span>${gets.toLocaleString(undefined,{maximumFractionDigits:gets>1000?0:2})} ${cur}</span></div>`;}
-    else if(cur==='USD'){recv=`<div class="prov-recv">$200 → <span>$${(200-p.fee_usd).toFixed(2)} USD</span></div>`;}
-    else{recv=`<div class="prov-recv" style="opacity:.5">Calculating…</div>`;}
     return `<div class="prov-card">
-      <div class="prov-head"><div class="prov-left"><div class="prov-dot" style="background:${p.color}"></div><div class="prov-name">${m[i]||''} ${p.name}</div><span class="prov-type ${tc}">${tl}</span></div><div class="prov-spd">⚡ ${p.delivery}</div></div>
-      <div class="pstats"><div class="ps"><div class="psl">SEND FEE</div><div class="psv">${feeD}</div></div><div class="ps"><div class="psl">FX MARGIN</div><div class="psv">${fxD}</div></div><div class="ps"><div class="psl">TOTAL COST</div><div class="psv${+tot<1.5?' chp':''}">~${tot}%</div></div></div>
-      ${recv}<a class="prov-btn" href="${p.url}" target="_blank" rel="noopener">GET LIVE QUOTE ↗</a>
+      <div class="prov-head"><div class="prov-left"><div class="prov-dot" style="background:${p.color}"></div><div class="prov-name">${medal} ${p.name}</div><span class="prov-type ${tc}">${tl}</span></div><div class="prov-spd">⚡ ${p.delivery}</div></div>
+      <div class="pstats"><div class="ps"><div class="psl">SEND FEE</div><div class="psv">${feeD}</div></div><div class="ps"><div class="psl">FX MARGIN</div><div class="psv">${fxD}</div></div><div class="ps"><div class="psl">TOTAL COST</div><div class="psv${isCheap?' chp':''}">~${tot}%</div></div></div>
+      ${recvHTML}
+      <a class="prov-btn" href="${p.url}" target="_blank" rel="noopener">GET LIVE QUOTE ↗</a>
       <div class="prov-note-txt">${p.note}</div>
     </div>`;
   }).join('');
 
-  g('providers-list').innerHTML=telProv&&tradProvs.length
-    ?`<div class="prov-divider"><div class="prov-divider-line"></div><span class="prov-divider-text">TRADITIONAL ALTERNATIVES</span><div class="prov-divider-line"></div></div>${tradHTML}`
-    :tradHTML;
+  g('providers-list').innerHTML=`<div class="slabel">CHEAPEST PROVIDERS · RANKED BY COST</div>${cards}`;
+
+  if(telAboutOpen){
+    const b=g('tel-about-body'),a=g('tel-about-arrow');
+    if(b)b.classList.add('open');if(a)a.classList.add('open');
+  }
 }
+
 
 function selectCountry(id,name){
   currentCountry=name;selId=id;
