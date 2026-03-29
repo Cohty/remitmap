@@ -291,25 +291,51 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 /* ══ RESPONSIVE ══ */
 @media(max-width:680px){
+  /* Hide desktop FX panel */
   #fx-panel,#fx-collapse-tab{display:none!important}
+  /* Show mobile-only elements */
   #mobile-nav{display:flex}
   #fx-sheet{display:flex}
-  #arc-legend{left:8px!important;bottom:70px}
-  #app.lb-open #arc-legend{bottom:316px}
-  #zoom-controls{bottom:70px;right:14px}
-  #app.lb-open #zoom-controls{bottom:316px}
+
+  /* Arc legend — hide on mobile, overlaps leaderboard */
+  #arc-legend{display:none!important}
   #hint{display:none}
-  #gc-value{font-size:20px}#gc-sub{font-size:7px}
+
+  /* Counter smaller on mobile */
+  #gc-value{font-size:20px}
+  #gc-sub{font-size:7px}
+
+  /* Zoom controls above nav */
+  #zoom-controls{bottom:68px;right:14px}
+  #app.lb-open #zoom-controls{bottom:calc(55vh + 8px)}
+
+  /* Leaderboard — sits above mobile nav bar */
   #leaderboard{bottom:60px}
   #leaderboard.lb-open{height:55vh}
-  #lb-body{height:calc(55vh - 56px)}
+  #lb-body{height:calc(55vh - 52px)}
+
+  /* Leaderboard header — fix cramping on narrow screens */
+  #lb-header{padding:0 12px;height:52px}
+  #lb-tabs{gap:4px;flex:1;min-width:0;overflow:hidden}
+  .lb-tab{font-size:9px;padding:5px 8px;letter-spacing:.03em}
+  /* Hide "LEADERBOARD" toggle text — mobile nav button already does this */
+  #lb-toggle{display:none}
   #lb-year-tag{display:none}
   .lb-info,.lb-bar{display:none}
   .lb-name{font-size:12px}
   .lb-amt{font-size:11px}
-  #info-panel{left:8px;right:8px;width:auto;top:auto;bottom:70px;transform:none;max-height:calc(100vh - 165px);animation:pin-mob .22s cubic-bezier(.34,1.56,.64,1)}
+
+  /* Info panel — full width, anchored above nav */
+  #info-panel{
+    left:8px;right:8px;width:auto;
+    top:auto;bottom:68px;transform:none;
+    max-height:calc(100vh - 165px);
+    animation:pin-mob .22s cubic-bezier(.34,1.56,.64,1);
+  }
   #app.lb-open #info-panel{bottom:calc(55vh + 10px)}
   @keyframes pin-mob{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Status + topbar */
   #data-status{font-size:7px;top:74px;right:10px}
   #tb-left p{display:none}
 }
