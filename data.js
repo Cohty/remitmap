@@ -469,6 +469,6 @@ window.MNO_DATA = {
   'Uruguay':{ mno:'Antel', subs:'2.1 million', share:'46%', outflow:'$155M', note:'Antel (state-owned Administración Nacional de Telecomunicaciones) leads ahead of Claro and Movistar. Uruguay has a small but steady remittance footprint from its diaspora in Spain and Argentina.' },
 
   // ── SPECIAL / TERRITORIES ──
-  'Falkland Islands':{ mno:'Sure South Atlantic', subs:'3,500', share:'100%', outflow:'N/A', note:'Sure South Atlantic is the sole operator providing mobile services to the Falkland Islands' small population of ~3,500. Remittance flows are negligible given the territory\'s small size.' },
+  'Falkland Islands':{ mno:'Sure South Atlantic', subs:'3,500', share:'100%', outflow:'N/A', note:'Sure South Atlantic is the sole operator providing mobile services to the Falkland Islands\' small population of ~3,500. Remittance flows are negligible given the territory\'s small size.' },
 
 };
