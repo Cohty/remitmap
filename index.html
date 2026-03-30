@@ -344,7 +344,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 /* ── SEARCH BAR ── */
 #search-wrap{
-  position:absolute;top:76px;left:50%;transform:translateX(-50%);
+  position:absolute;top:118px;left:50%;transform:translateX(-50%);
   z-index:26;width:260px;pointer-events:all;
 }
 #search-input{
@@ -401,13 +401,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   font-size:10px;color:#7aa8cc;text-align:center;opacity:.6;
 }
 @media(max-width:680px){
-  #search-wrap{width:calc(100% - 130px);left:10px;transform:none}
+  #search-wrap{width:calc(100% - 130px);left:10px;transform:none;top:116px}
 }
 
 /* ══ TELCOIN CHAIN PANEL ══ */
 #chain-panel{
   position:absolute;right:72px;bottom:64px;z-index:22;
-  width:220px;
+  width:260px;
   background:rgba(3,9,22,.93);
   border:.5px solid rgba(0,229,255,.22);
   border-radius:11px;
@@ -422,72 +422,72 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 #chain-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:9px 12px 8px;cursor:pointer;user-select:none;
+  padding:13px 16px 11px;cursor:pointer;user-select:none;
   border-bottom:.5px solid rgba(0,229,255,.1);
 }
 #chain-header:hover{background:rgba(0,229,255,.04)}
-.chain-title-row{display:flex;align-items:center;gap:7px}
+.chain-title-row{display:flex;align-items:center;gap:9px}
 .chain-dot{
-  width:7px;height:7px;border-radius:50%;
+  width:10px;height:10px;border-radius:50%;
   background:#00E5FF;flex-shrink:0;
   animation:pdot 2.4s infinite;
   box-shadow:0 0 6px rgba(0,229,255,.6);
 }
 .chain-dot.offline{background:#ff4444;box-shadow:0 0 6px rgba(255,68,68,.4)}
-#chain-title{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;color:#00E5FF;letter-spacing:.13em}
+#chain-title{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#00E5FF;letter-spacing:.13em}
 #chain-network-badge{
-  font-family:'Space Mono',monospace;font-size:7px;letter-spacing:.1em;
+  font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;
   background:rgba(0,229,255,.1);border:.5px solid rgba(0,229,255,.25);
-  border-radius:3px;padding:1px 5px;color:#00E5FF;opacity:.75;
+  border-radius:4px;padding:2px 7px;color:#00E5FF;opacity:.85;
 }
-#chain-toggle-icon{font-size:8px;color:#7aa8cc;flex-shrink:0;transition:transform .25s}
+#chain-toggle-icon{font-size:11px;color:#7aa8cc;flex-shrink:0;transition:transform .25s}
 #chain-toggle-icon.open{transform:rotate(180deg)}
 
 #chain-body{
   max-height:0;overflow:hidden;
   transition:max-height .32s cubic-bezier(.4,0,.2,1);
 }
-#chain-body.open{max-height:280px}
+#chain-body.open{max-height:320px}
 
 .chain-stats-grid{
   display:grid;grid-template-columns:1fr 1fr;
-  gap:5px;padding:10px 12px 4px;
+  gap:7px;padding:12px 16px 6px;
 }
 .chain-stat{
   background:rgba(0,0,0,.25);border-radius:7px;
   padding:7px 9px;
 }
 .chain-stat-label{
-  font-family:'Space Mono',monospace;font-size:7px;
-  color:#7aa8cc;letter-spacing:.06em;margin-bottom:3px;
+  font-family:'Space Mono',monospace;font-size:9px;
+  color:#7aa8cc;letter-spacing:.06em;margin-bottom:4px;
   text-transform:uppercase;
 }
 .chain-stat-value{
-  font-family:'Space Mono',monospace;font-size:12px;
+  font-family:'Space Mono',monospace;font-size:16px;
   font-weight:700;color:#e8f4ff;line-height:1;
 }
 .chain-stat-value.cyan{color:#00E5FF}
 .chain-stat-full{
   grid-column:1/-1;background:rgba(0,0,0,.2);
-  border-radius:7px;padding:6px 9px;
+  border-radius:7px;padding:8px 11px;
   display:flex;align-items:center;justify-content:space-between;
 }
 .chain-stat-full .chain-stat-label{margin-bottom:0}
-.chain-stat-full .chain-stat-value{font-size:11px}
+.chain-stat-full .chain-stat-value{font-size:14px}
 
 .chain-divider{
   height:.5px;background:rgba(0,229,255,.08);margin:2px 12px;
 }
 .chain-footer{
   display:flex;align-items:center;justify-content:space-between;
-  padding:7px 12px 9px;
+  padding:8px 16px 12px;
 }
 #chain-updated{
-  font-family:'Space Mono',monospace;font-size:7px;
+  font-family:'Space Mono',monospace;font-size:9px;
   color:#7aa8cc;opacity:.5;
 }
 #chain-link{
-  font-family:'Space Mono',monospace;font-size:7.5px;
+  font-family:'Space Mono',monospace;font-size:10px;
   color:#3a9aff;text-decoration:none;letter-spacing:.06em;
   transition:color .15s;
 }
@@ -496,11 +496,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 /* Collapsed peek strip */
 #chain-peek{
   display:flex;align-items:center;justify-content:space-between;
-  padding:0 12px 8px;
+  padding:4px 16px 12px;
 }
 .chain-peek-item{
-  display:flex;align-items:center;gap:5px;
-  font-family:'Space Mono',monospace;font-size:8.5px;
+  display:flex;align-items:center;gap:6px;
+  font-family:'Space Mono',monospace;font-size:11px;
   color:#7aa8cc;
 }
 .chain-peek-val{color:#e8f4ff;font-weight:700;margin-left:2px}
@@ -514,11 +514,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 /* ══ SAVINGS TOGGLE ══ */
 #savings-toggle-wrap{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  margin-top:6px;pointer-events:all;cursor:default;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  margin-top:10px;pointer-events:all;cursor:default;
 }
 #savings-toggle-label{
-  font-family:'Space Mono',monospace;font-size:8px;
+  font-family:'Space Mono',monospace;font-size:12px;
   letter-spacing:.12em;color:#7aa8cc;text-transform:uppercase;
   transition:color .2s;user-select:none;
 }
@@ -526,18 +526,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 /* Pill toggle */
 .tog-pill{
-  position:relative;display:inline-block;width:36px;height:18px;
+  position:relative;display:inline-block;width:52px;height:28px;
   cursor:pointer;flex-shrink:0;
 }
 .tog-pill input{opacity:0;width:0;height:0;position:absolute}
 .tog-slider{
-  position:absolute;inset:0;border-radius:18px;
+  position:absolute;inset:0;border-radius:28px;
   background:rgba(58,154,255,.15);border:.5px solid rgba(58,154,255,.3);
   transition:all .22s cubic-bezier(.4,0,.2,1);
 }
 .tog-slider::before{
   content:'';position:absolute;
-  width:13px;height:13px;left:2px;top:2px;
+  width:21px;height:21px;left:3px;top:3px;
   border-radius:50%;background:#7aa8cc;
   transition:all .22s cubic-bezier(.4,0,.2,1);
 }
@@ -546,7 +546,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   box-shadow:0 0 8px rgba(0,229,255,.3);
 }
 .tog-pill input:checked + .tog-slider::before{
-  transform:translateX(18px);background:#00E5FF;
+  transform:translateX(24px);background:#00E5FF;
 }
 
 /* Savings legend (replaces arc legend in savings mode) */
@@ -557,19 +557,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 }
 #app.lb-open #savings-legend{bottom:308px}
 #app.fx-hidden #savings-legend{left:8px}
-.sli{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:#e8f4ff;letter-spacing:.06em;margin-bottom:5px}
-.sld{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.sli{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:11px;color:#e8f4ff;letter-spacing:.06em;margin-bottom:7px}
+.sld{width:15px;height:15px;border-radius:4px;flex-shrink:0}
 
 /* Savings stat badge — floats above globe */
-#savings-stat{
-  position:absolute;top:78px;left:50%;transform:translateX(-50%);
-  font-family:'Space Mono',monospace;font-size:9px;
-  color:#00E5FF;letter-spacing:.1em;
-  background:rgba(0,229,255,.08);border:.5px solid rgba(0,229,255,.2);
-  border-radius:20px;padding:4px 14px;pointer-events:none;
-  display:none;white-space:nowrap;z-index:26;
-  animation:fadeIn .3s ease;
-}
+#savings-stat{display:none!important}
 @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
 @media(max-width:680px){
@@ -1673,7 +1665,7 @@ function setSavingsMode(on){
     if(label) label.textContent = 'TELCOIN CHEAPEST PROVIDER IN';
     if(value){ value.textContent = savingsTotal + ' COUNTRIES'; value.style.fontSize='20px'; value.style.color='#00E5FF'; value.style.textShadow='0 0 24px rgba(0,229,255,.45)'; }
     if(sub)   sub.textContent   = pct + '% OF TRACKED CORRIDORS · CLICK ANY COUNTRY TO COMPARE';
-    if(stat){ stat.textContent  = 'TELCOIN SAVINGS VIEW ACTIVE — CYAN = TELCOIN WINS'; stat.style.display='block'; }
+    // savings-stat hidden — info shown in counter instead
 
     // Show savings legend, hide arc legend
     const sl=g('savings-legend'), al=g('arc-legend');
@@ -1688,7 +1680,7 @@ function setSavingsMode(on){
     if(label) label.textContent = 'REMITTANCES SENT TODAY (EST.)';
     if(value){ value.style.fontSize=''; value.style.color=''; value.style.textShadow=''; }
     if(sub)   sub.textContent   = '$905B ANNUAL · WORLD BANK 2024 · ~$28,668/SEC';
-    if(stat)  stat.style.display='none';
+    // savings-stat hidden
 
     // Restore legends
     const sl=g('savings-legend'), al=g('arc-legend');
