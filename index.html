@@ -828,7 +828,7 @@ setInterval(()=>{
 },3600000);
 
 // ── WORLD BANK ────────────────────────────────────────────────────────────────
-const WB_KEY='wb_rem_v4';
+const WB_KEY='wb_rem_v5';
 function setStatus(c,t){g('sdot').className=c;g('stxt').textContent=t;}
 function fmtM(v){if(!v||isNaN(v))return null;const n=+v;if(n>=1e12)return'$'+(n/1e12).toFixed(1)+'T';if(n>=1e9)return'$'+(n/1e9).toFixed(1)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(0)+'M';return'$'+n.toFixed(0);}
 function fmtP(v){return v&&!isNaN(v)?(+v).toFixed(1)+'% of GDP':'';}
