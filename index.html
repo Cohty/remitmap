@@ -156,6 +156,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #arc-legend{position:absolute;bottom:64px;left:198px;z-index:22;pointer-events:none;transition:left .3s cubic-bezier(.4,0,.2,1),bottom .32s cubic-bezier(.4,0,.2,1)}
 #app.lb-open #arc-legend{bottom:308px}
 #app.fx-hidden #arc-legend{left:8px}
+#app.fx-hidden #search-wrap{left:10px}
 .li{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:#7aa8cc;letter-spacing:.07em;margin-bottom:5px}
 .ld{border-radius:1px;flex-shrink:0}
 #hint{position:absolute;bottom:64px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:8px;color:rgba(122,168,204,.3);letter-spacing:.1em;pointer-events:none;z-index:22;white-space:nowrap;transition:bottom .32s cubic-bezier(.4,0,.2,1)}
@@ -344,8 +345,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 /* ── SEARCH BAR ── */
 #search-wrap{
-  position:absolute;top:118px;left:50%;transform:translateX(-50%);
-  z-index:26;width:260px;pointer-events:all;
+  position:absolute;top:76px;left:200px;transform:none;
+  z-index:26;width:240px;pointer-events:all;
+  transition:left .3s cubic-bezier(.4,0,.2,1);
 }
 #search-input{
   width:100%;background:rgba(4,12,28,.94);
@@ -401,7 +403,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   font-size:10px;color:#7aa8cc;text-align:center;opacity:.6;
 }
 @media(max-width:680px){
-  #search-wrap{width:calc(100% - 130px);left:10px;transform:none;top:116px}
+  #search-wrap{left:10px;right:50px;width:auto;top:76px;transform:none}
 }
 
 /* ══ TELCOIN CHAIN PANEL ══ */
@@ -1763,7 +1765,61 @@ canvas.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length=
 canvas.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===2&&pinchDist!==null){const t0=e.touches[0],t1=e.touches[1];const d=Math.hypot(t1.clientX-t0.clientX,t1.clientY-t0.clientY);zoom(d/pinchDist);pinchDist=d;}else if(dragging&&e.touches.length===1){const t=e.touches[0];const dx=t.clientX-lastMX,dy=t.clientY-lastMY;if(Math.abs(dx)>3||Math.abs(dy)>3)didDrag=true;const s=.35/curScale;rot[0]+=dx*s;rot[1]=Math.max(-85,Math.min(85,rot[1]-dy*s));proj.rotate(rot);lastMX=t.clientX;lastMY=t.clientY;dirty=true;lastInteraction=performance.now();}},{passive:false});
 canvas.addEventListener('touchend',e=>{if(e.touches.length<2)pinchDist=null;if(e.touches.length===0){dragging=false;if(!didDrag&&e.changedTouches.length>0){const t=e.changedTouches[0];hClick(t.clientX,t.clientY);}}});
 function dsq(a,b){const dx=a[0]-b[0],dy=a[1]-b[1];return dx*dx+dy*dy;}
-function hClick(x,y){if(!countries)return;const cx=W/2,cy=H/2,sc=getS(),dx=x-cx,dy=y-cy;if(dx*dx+dy*dy>sc*sc){closePanel();return;}const inv=proj.invert([x,y]);if(!inv){closePanel();return;}for(const f of countries){try{if(d3.geoContains(f,inv)){const id=parseInt(f.id);const n=NAMES[id];if(n){selectCountry(id,n);return;}}}catch(_){}}const thr=Math.max(2.5,8/curScale);let best=null,bestD=thr*thr;for(const[n,[lon,lat]]of Object.entries(CENS)){const d=dsq(inv,[lon,lat]);if(d<bestD){bestD=d;best=n;}}if(best){for(const[id,n]of Object.entries(NAMES)){if(n===best){selectCountry(parseInt(id),best);return;}}}closePanel();}
+function hClick(x,y){
+  if(!countries)return;
+  const cx=W/2,cy=H/2,sc=getS(),dx=x-cx,dy=y-cy;
+  // Outside globe circle
+  if(dx*dx+dy*dy>sc*sc){closePanel();return;}
+
+  // Helper: try to identify a country at a canvas point
+  function tryPoint(px,py){
+    const inv=proj.invert([px,py]);
+    if(!inv)return null;
+    for(const f of countries){
+      try{
+        if(d3.geoContains(f,inv)){
+          const id=parseInt(f.id);
+          const n=NAMES[id];
+          if(n)return{id,n};
+        }
+      }catch(_){}
+    }
+    return null;
+  }
+
+  // 1. Try exact click point
+  let hit=tryPoint(x,y);
+  if(hit){selectCountry(hit.id,hit.n);return;}
+
+  // 2. Sample 8 nearby pixel offsets — catches near-edge clicks and small countries
+  const offsets=[[-3,0],[3,0],[0,-3],[0,3],[-3,-3],[3,-3],[-3,3],[3,3],[-5,0],[5,0],[0,-5],[0,5]];
+  for(const[ox,oy]of offsets){
+    // Stay inside globe circle
+    const nx=x+ox,ny=y+oy;
+    if((nx-cx)**2+(ny-cy)**2>sc*sc)continue;
+    hit=tryPoint(nx,ny);
+    if(hit){selectCountry(hit.id,hit.n);return;}
+  }
+
+  // 3. Centroid fallback — generous threshold for large countries near limb
+  const inv=proj.invert([x,y]);
+  if(inv){
+    // Find nearest mapped country centroid — threshold 22° handles most countries
+    // (Brazil ~17°, USA ~25°, Russia ~40° from edges — Russia/Canada still limited)
+    let best=null,bestD=22*22;
+    for(const[n,[lon,lat]]of Object.entries(CENS)){
+      const d=dsq(inv,[lon,lat]);
+      if(d<bestD){bestD=d;best=n;}
+    }
+    if(best){
+      for(const[id,n]of Object.entries(NAMES)){
+        if(n===best){selectCountry(parseInt(id),best);return;}
+      }
+    }
+  }
+
+  closePanel();
+}
 function vis(ll){const phi=(90-ll[1])*Math.PI/180,theta=(ll[0]+180)*Math.PI/180;const v=[Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];const cp=(90+rot[1])*Math.PI/180,ct=(-rot[0]+180)*Math.PI/180;const c=[Math.sin(cp)*Math.cos(ct),Math.cos(cp),Math.sin(cp)*Math.sin(ct)];return v[0]*c[0]+v[1]*c[1]+v[2]*c[2]>.05;}
 function buildPts(fr,to){const ip=d3.geoInterpolate(fr,to);const pts=[];for(let i=0;i<=80;i++)pts.push(ip(i/80));return pts;}
 function spawnArc(){const weighted=[];CORRIDORS.forEach(c=>{for(let i=0;i<c.tier;i++)weighted.push(c);});const pool=[...weighted].sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;if(!vis(fr)&&!vis(to))continue;const t=TIER[c.tier];arcs.push({gp:buildPts(fr,to),tier:c.tier,t,p:0});return;}}
@@ -1846,8 +1902,8 @@ function draw(ts){
       }
       ctx.fill();ctx.stroke();
 
-      // In savings mode: extra glow pulse on MNO partner countries
-      if(savingsMode && fname && savingsMap[fname]?.isMNO && savingsMap[fname]?.rank===1){
+      // In savings mode: extra glow pulse on MNO partner countries (skip if selected)
+      if(savingsMode && fname && savingsMap[fname]?.isMNO && savingsMap[fname]?.rank===1 && fid!==selId){
         ctx.beginPath();pg(f);
         const pulse = 0.12 + 0.08*Math.sin(Date.now()/600);
         ctx.strokeStyle=`rgba(0,229,255,${pulse})`;
