@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>RemitMap — Global MNO & Remittance Explorer</title>
 <meta name="description" content="Live globe showing mobile operators, remittance flows, and cheapest transfer providers for every country.">
 
@@ -38,7 +38,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #globe-canvas.grabbing{cursor:grabbing}
 
 /* ══ TOPBAR ══ */
-#topbar{position:absolute;top:0;left:0;right:0;height:72px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:25;pointer-events:none;background:linear-gradient(to bottom,rgba(3,8,16,.97) 65%,transparent)}
+#topbar{position:absolute;top:0;left:0;right:0;height:72px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:25;pointer-events:none;background:linear-gradient(to bottom,rgba(3,8,16,.97) 65%,transparent);padding-top:max(0px,env(safe-area-inset-top))}
 #tb-left h1{font-size:13px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
 #tb-left p{font-family:'Space Mono',monospace;font-size:8px;color:#7aa8cc;letter-spacing:.07em;margin-top:2px}
 #tb-right{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:#00e5a0;letter-spacing:.1em}
@@ -90,7 +90,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #fx-footer{font-family:'Space Mono',monospace;font-size:7px;color:#7aa8cc;opacity:.45;padding:5px 12px;border-top:.5px solid rgba(58,154,255,.08);text-align:center}
 
 /* ══ MOBILE NAV ══ */
-#mobile-nav{display:none;position:absolute;bottom:0;left:0;right:0;height:60px;z-index:30;background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);backdrop-filter:blur(20px);flex-direction:row;align-items:stretch}
+#mobile-nav{display:none;position:absolute;bottom:0;left:0;right:0;height:60px;z-index:30;background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);backdrop-filter:blur(20px);flex-direction:row;align-items:stretch;padding-bottom:env(safe-area-inset-bottom,0px)}
 .mob-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.04em;color:#7aa8cc;padding:8px 4px;transition:all .15s;border:none;background:none}
 .mob-btn.active{color:#3a9aff;background:rgba(58,154,255,.08)}
 .mob-btn:active{background:rgba(58,154,255,.15)}
@@ -98,7 +98,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .mob-divider{width:.5px;background:rgba(58,154,255,.18);margin:10px 0}
 
 /* ══ MOBILE FX SHEET ══ */
-#fx-sheet{display:none;position:absolute;bottom:60px;left:0;right:0;z-index:28;background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);backdrop-filter:blur(24px);max-height:60vh;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+#fx-sheet{display:none;position:absolute;bottom:calc(60px + env(safe-area-inset-bottom,0px));left:0;right:0;z-index:28;background:rgba(3,9,22,.97);border-top:.5px solid rgba(58,154,255,.22);backdrop-filter:blur(24px);max-height:60vh;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
 #fx-sheet.sheet-open{transform:translateY(0)}
 #fx-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;border-bottom:.5px solid rgba(58,154,255,.1);flex-shrink:0}
 #fx-sheet-title{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:#3a9aff;letter-spacing:.12em}
@@ -303,16 +303,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   #arc-legend{display:none!important}
   #hint{display:none}
 
+  /* Topbar taller on mobile to clear status bar */
+  #topbar{height:88px;padding-top:max(16px,env(safe-area-inset-top))}
+  /* Counter shifted down on mobile */
+  #global-counter{top:calc(50% + 4px)}
   /* Counter smaller on mobile */
   #gc-value{font-size:20px}
   #gc-sub{font-size:7px}
 
   /* Zoom controls above nav */
-  #zoom-controls{bottom:68px;right:14px}
+  #zoom-controls{bottom:calc(68px + env(safe-area-inset-bottom,0px));right:14px}
   #app.lb-open #zoom-controls{bottom:calc(55vh + 8px)}
 
   /* Leaderboard — sits above mobile nav bar */
-  #leaderboard{bottom:60px}
+  #leaderboard{bottom:calc(60px + env(safe-area-inset-bottom,0px))}
   #leaderboard.lb-open{height:55vh}
   #lb-body{height:calc(55vh - 52px)}
 
@@ -330,7 +334,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   /* Info panel — full width, anchored above nav */
   #info-panel{
     left:8px;right:8px;width:auto;
-    top:auto;bottom:68px;transform:none;
+    top:auto;bottom:calc(68px + env(safe-area-inset-bottom,0px));transform:none;
     max-height:calc(100vh - 165px);
     animation:pin-mob .22s cubic-bezier(.34,1.56,.64,1);
   }
