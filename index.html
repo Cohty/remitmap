@@ -39,17 +39,17 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #globe-canvas.grabbing{cursor:grabbing}
 
 /* ══ TOPBAR ══ */
-#topbar{position:absolute;top:0;left:0;right:0;height:80px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;z-index:25;pointer-events:none;background:linear-gradient(to bottom,rgba(3,8,16,.97) 65%,transparent);padding-top:max(0px,env(safe-area-inset-top))}
+#topbar{position:absolute;top:0;left:0;right:0;min-height:80px;height:auto;padding:8px 24px;display:flex;align-items:center;justify-content:space-between;z-index:25;pointer-events:none;background:linear-gradient(to bottom,rgba(3,8,16,.97) 65%,transparent);padding-top:max(8px,env(safe-area-inset-top))}
 #tb-left h1{font-size:18px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
 #tb-left p{font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;letter-spacing:.07em;margin-top:3px}
 #tb-right{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:12px;color:#00e5a0;letter-spacing:.1em}
 #live-dot{width:7px;height:7px;border-radius:50%;background:#00e5a0;animation:pdot 2s infinite;flex-shrink:0}
 @keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
-#global-counter{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;white-space:nowrap;padding:4px 0}
+#global-counter{position:absolute;left:50%;top:8px;bottom:auto;transform:translateX(-50%);text-align:center;pointer-events:all;white-space:nowrap;padding:8px 0;cursor:default}
 #gc-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;color:#7aa8cc;text-transform:uppercase;margin-bottom:5px}
 #gc-value{font-family:'Space Mono',monospace;font-size:38px;font-weight:700;color:#00e5a0;letter-spacing:.03em;line-height:1;text-shadow:0 0 24px rgba(0,229,160,.35)}
 #gc-sub{font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;opacity:.55;margin-top:5px;letter-spacing:.09em}
-#data-status{position:absolute;top:84px;right:20px;z-index:25;pointer-events:none;display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:10px}
+#data-status{position:absolute;top:84px;right:360px;z-index:25;pointer-events:none;display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:10px}
 #sdot{width:5px;height:5px;border-radius:50%;background:#555;flex-shrink:0;transition:background .4s}
 #sdot.live{background:#00e5a0}#sdot.cached{background:#ffa500}#sdot.offline{background:#ff4444}
 #stxt{color:#7aa8cc}
@@ -720,11 +720,27 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   #easter-moon{top:100px;right:20px;width:22px;height:22px}
   #moon-canvas-wrap{width:260px;height:260px}
 }
+
+/* ══ TOOLTIP ══ */
+.rmtooltip{
+  position:absolute;z-index:999;
+  background:rgba(3,9,22,.97);
+  border:.5px solid rgba(58,154,255,.3);
+  border-radius:9px;padding:10px 14px;
+  font-family:'Space Mono',monospace;font-size:10px;
+  color:#a0c8e8;line-height:1.65;
+  max-width:280px;pointer-events:none;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  opacity:0;transition:opacity .15s;
+}
+.rmtooltip.visible{opacity:1}
+.rmtooltip strong{color:#e8f4ff;display:block;margin-bottom:4px;font-size:11px}
 </style>
 </head>
 <body>
 <div id="app">
   <canvas id="stars"></canvas>
+  <div id="rmtooltip" class="rmtooltip"></div>
   <canvas id="globe-canvas"></canvas>
 
   <!-- EASTER EGG MOON -->
@@ -1554,8 +1570,19 @@ function selectCountry(id,name){
   const _sw=g('search-wrap');
   if(_sw){_sw.style.opacity='0';_sw.style.pointerEvents='none';}
   document.getElementById('app').classList.add('panel-open');
+  // Close chain panel if open (avoid overlap)
+  if(chainOpen){toggleChain();}
 }
-function closePanel(){g('info-panel').style.display='none';currentCountry=null;selId=null;document.getElementById('app').classList.remove('panel-open');const sw=g('search-wrap');if(sw){sw.style.opacity='';sw.style.pointerEvents='';}}
+function closePanel(){
+  g('info-panel').style.display='none';currentCountry=null;selId=null;
+  document.getElementById('app').classList.remove('panel-open');
+  const sw=g('search-wrap');if(sw){sw.style.opacity='';sw.style.pointerEvents='';}
+  // Reset chain panel + zoom controls to default positions
+  const cp=g('chain-panel');if(cp){cp.style.transition='right .3s cubic-bezier(.4,0,.2,1)';cp.style.right='20px';}
+  const zc=g('zoom-controls');if(zc){zc.style.transition='right .3s cubic-bezier(.4,0,.2,1)';zc.style.right='330px';}
+  // Restore moon opacity
+  const em=g('easter-moon');if(em){em.style.opacity='';em.style.pointerEvents='all';}
+}
 window.closePanel=closePanel;
 
 
@@ -1972,10 +1999,24 @@ function spawnSavingsArc(){
   const mc = g('easter-moon');
   if(!mc) return;
   // Avoid topbar (top 90px), leaderboard (bottom 80px), FX panel (left 200px), chain panel (right 320px)
-  const minTop=100, maxTop=Math.max(150, window.innerHeight-200);
-  const minLeft=220, maxLeft=Math.max(300, window.innerWidth-340);
-  mc.style.top  = (minTop  + Math.random()*(maxTop-minTop))  + 'px';
-  mc.style.left = (minLeft + Math.random()*(maxLeft-minLeft)) + 'px';
+  // Place moon in the starfield corners — never over the globe or UI panels
+  // Avoid: top 100px (topbar), bottom 120px (leaderboard+chain), left 200px (FX), right 360px (chain+zoom)
+  // Globe occupies roughly center 60% of screen
+  // Safe zones: top-right corner or very far left margin
+  const W = window.innerWidth, H = window.innerHeight;
+  const zones = [
+    // Top-right starfield corner (right of globe, above chain panel)
+    { top: [110, 180], left: [W-200, W-80] },
+    // Upper starfield area left of center but right of FX panel
+    { top: [110, 180], left: [215, 260] },
+    // Lower-left starfield
+    { top: [H-220, H-140], left: [215, 260] },
+  ];
+  const z = zones[Math.floor(Math.random()*zones.length)];
+  const rnd = (a,b)=>a+Math.random()*(b-a);
+  mc.style.top  = rnd(z.top[0],  z.top[1])  + 'px';
+  mc.style.left = rnd(z.left[0], z.left[1]) + 'px';
+  mc.style.right = 'auto';
   mc.style.right = 'auto';
 })();
 
@@ -2169,6 +2210,42 @@ g('moon-overlay').addEventListener('click', e=>{
 document.addEventListener('keydown', e=>{ if(e.key==='Escape')closeMoon(); });
 
 
+
+// ── TOOLTIP SYSTEM ───────────────────────────────────────────────────────────
+const TOOLTIPS = {
+  'global-counter': '<strong>Remittances Sent Today (Est.)</strong>Running estimate based on World Bank 2024 figure: $905B sent globally per year (~$28,668/sec). Resets at midnight UTC. Not a live transaction feed — a statistical projection.',
+  'gc-label': '<strong>Remittances Sent Today (Est.)</strong>Running estimate — $905B annually per World Bank 2024. Calculates seconds elapsed since midnight x $28,668/sec. Resets daily at midnight UTC.',
+  'gc-value': '<strong>Live Estimate</strong>Running daily total. World Bank reports $905B sent globally in 2024. Counter resets at midnight UTC.',
+  'savings-toggle-wrap': '<strong>Telcoin Savings View</strong>Colors countries where Telcoin is the cheapest provider for a $200 transfer, ranked by total cost (fee + FX margin). Based on World Bank RPW Q1 2025 data.',
+};
+
+(function(){
+  const tip = g('rmtooltip');
+  if(!tip) return;
+  let hideTimer;
+
+  function showTip(el, key){
+    const text = TOOLTIPS[key];
+    if(!text || !tip) return;
+    tip.innerHTML = text;
+    const rect = el.getBoundingClientRect();
+    tip.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
+    tip.style.top  = (rect.bottom + 8) + 'px';
+    tip.classList.add('visible');
+    clearTimeout(hideTimer);
+  }
+  function hideTip(){
+    hideTimer = setTimeout(()=>tip.classList.remove('visible'), 120);
+  }
+
+  Object.keys(TOOLTIPS).forEach(id=>{
+    const el = g(id);
+    if(!el) return;
+    el.addEventListener('mouseenter', ()=>showTip(el, id));
+    el.addEventListener('mouseleave', hideTip);
+  });
+})();
+
 // ── GLOBE ─────────────────────────────────────────────────────────────────────
 (function(){const c=g('stars'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;for(let i=0;i<300;i++){x.beginPath();x.arc(Math.random()*c.width,Math.random()*c.height,Math.random()*1.1,0,Math.PI*2);x.fillStyle=`rgba(200,220,255,${(Math.random()*.45+.08).toFixed(2)})`;x.fill();}})();
 const canvas=g('globe-canvas'),ctx=canvas.getContext('2d');
@@ -2333,8 +2410,8 @@ function draw(ts){
       } else if(savingsMode && fname){
         const sd = savingsMap[fname];
         if(!sd){
-          // No provider data — neutral
-          ctx.fillStyle='#0d1a28';ctx.strokeStyle='#1a2a3a';ctx.lineWidth=.4;
+          // No provider data — exact same as normal mode
+          ctx.fillStyle='#0d2238';ctx.strokeStyle='#1a3a55';ctx.lineWidth=.4;
         } else if(sd.rank===1 && sd.isMNO){
           // Telcoin cheapest + MNO partner — brightest cyan
           ctx.fillStyle='rgba(0,229,255,0.18)';ctx.strokeStyle='rgba(0,229,255,0.9)';ctx.lineWidth=1.2;
@@ -2342,8 +2419,8 @@ function draw(ts){
           // Telcoin cheapest — cyan
           ctx.fillStyle='rgba(0,200,220,0.10)';ctx.strokeStyle='rgba(0,200,220,0.65)';ctx.lineWidth=0.7;
         } else {
-          // Other provider wins — keep dark (same as normal mode, don't highlight)
-          ctx.fillStyle='#0d1c2e';ctx.strokeStyle='#1a3040';ctx.lineWidth=.4;
+          // Other provider wins — exact same as normal mode
+          ctx.fillStyle='#0d2238';ctx.strokeStyle='#1a3a55';ctx.lineWidth=.4;
         }
       } else {
         // Normal mode
@@ -2351,13 +2428,24 @@ function draw(ts){
       }
       ctx.fill();ctx.stroke();
 
-      // In savings mode: extra glow pulse on MNO partner countries (skip if selected)
-      if(savingsMode && fname && savingsMap[fname]?.isMNO && savingsMap[fname]?.rank===1 && fid!==selId){
+      // In savings mode: animated glow on ALL Telcoin-cheapest countries
+      if(savingsMode && fname && savingsMap[fname]?.rank===1 && fid!==selId){
+        const isMNO = savingsMap[fname]?.isMNO;
+        const t = Date.now();
+        // Outer glow pulse
         ctx.beginPath();pg(f);
-        const pulse = 0.12 + 0.08*Math.sin(Date.now()/600);
-        ctx.strokeStyle=`rgba(0,229,255,${pulse})`;
-        ctx.lineWidth=3;ctx.stroke();
-        dirty=true; // keep animating pulse
+        const pulseA = (isMNO ? 0.35 : 0.18) + (isMNO ? 0.15 : 0.10)*Math.sin(t/700 + fid*.3);
+        const glowColor = isMNO ? `rgba(0,229,255,${pulseA})` : `rgba(0,200,220,${pulseA})`;
+        ctx.strokeStyle=glowColor;
+        ctx.lineWidth=isMNO?3.5:2;ctx.stroke();
+        // Second wider glow ring for MNO partners
+        if(isMNO){
+          ctx.beginPath();pg(f);
+          const outerA = 0.08 + 0.06*Math.sin(t/900 + fid*.2);
+          ctx.strokeStyle=`rgba(0,229,255,${outerA})`;
+          ctx.lineWidth=6;ctx.stroke();
+        }
+        dirty=true;
       }
     });
   }
