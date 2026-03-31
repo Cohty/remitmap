@@ -42,14 +42,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #topbar{position:absolute;top:0;left:0;right:0;min-height:80px;height:auto;padding:8px 24px;display:flex;align-items:center;justify-content:space-between;z-index:25;pointer-events:none;background:linear-gradient(to bottom,rgba(3,8,16,.97) 65%,transparent);padding-top:max(8px,env(safe-area-inset-top))}
 #tb-left h1{font-size:18px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
 #tb-left p{font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;letter-spacing:.07em;margin-top:3px}
-#tb-right{display:flex;align-items:center;gap:8px;font-family:'Space Mono',monospace;font-size:12px;color:#00e5a0;letter-spacing:.1em}
+#tb-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-family:'Space Mono',monospace;font-size:12px;color:#00e5a0;letter-spacing:.1em}
 #live-dot{width:7px;height:7px;border-radius:50%;background:#00e5a0;animation:pdot 2s infinite;flex-shrink:0}
 @keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
 #global-counter{position:absolute;left:50%;top:8px;bottom:auto;transform:translateX(-50%);text-align:center;pointer-events:all;white-space:nowrap;padding:8px 0;cursor:default}
 #gc-label{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.14em;color:#7aa8cc;text-transform:uppercase;margin-bottom:5px}
 #gc-value{font-family:'Space Mono',monospace;font-size:38px;font-weight:700;color:#00e5a0;letter-spacing:.03em;line-height:1;text-shadow:0 0 24px rgba(0,229,160,.35)}
 #gc-sub{font-family:'Space Mono',monospace;font-size:10px;color:#7aa8cc;opacity:.55;margin-top:5px;letter-spacing:.09em}
-#data-status{position:absolute;top:84px;right:360px;z-index:25;pointer-events:none;display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:10px}
+#data-status{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:9px;pointer-events:none;opacity:.8}
 #sdot{width:5px;height:5px;border-radius:50%;background:#555;flex-shrink:0;transition:background .4s}
 #sdot.live{background:#00e5a0}#sdot.cached{background:#ffa500}#sdot.offline{background:#ff4444}
 #stxt{color:#7aa8cc}
@@ -695,15 +695,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   transition:all .2s;
 }
 #join-telcoin-btn:hover{background:rgba(0,229,255,.15);border-color:#00E5FF;box-shadow:0 0 16px rgba(0,229,255,.3);}
-#visitor-counter-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
-#visitor-label{font-size:9px;letter-spacing:.18em;color:#7aa8cc;opacity:.6}
-#visitor-digits{display:flex;gap:3px}
+#visitor-counter-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
+#visitor-label{font-size:11px;letter-spacing:.22em;color:#7aa8cc;opacity:.7;text-transform:uppercase}
+#visitor-digits{display:flex;gap:5px}
 .vdigit{
-  font-family:'Space Mono',monospace;font-size:22px;font-weight:700;
-  color:#00E5FF;background:rgba(0,229,255,.08);
-  border:.5px solid rgba(0,229,255,.25);border-radius:5px;
-  width:22px;text-align:center;line-height:1.4;
-  text-shadow:0 0 8px rgba(0,229,255,.5);
+  font-family:'Space Mono',monospace;font-size:32px;font-weight:700;
+  color:#00E5FF;background:rgba(0,229,255,.1);
+  border:.5px solid rgba(0,229,255,.35);border-radius:7px;
+  width:34px;text-align:center;line-height:1.4;
+  text-shadow:0 0 14px rgba(0,229,255,.7);
+  box-shadow:0 0 12px rgba(0,229,255,.15);
 }
 
 /* Subtle glow ring behind moon canvas */
@@ -735,6 +736,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 }
 .rmtooltip.visible{opacity:1}
 .rmtooltip strong{color:#e8f4ff;display:block;margin-bottom:4px;font-size:11px}
+
+/* ══ MOON CONFETTI + TWINKLE ══ */
+#moon-confetti-canvas{
+  position:absolute;inset:0;pointer-events:none;z-index:10001;
+}
+.moon-star{
+  position:absolute;border-radius:50%;pointer-events:none;
+  animation:twinkle var(--dur,2s) ease-in-out infinite;
+  opacity:0;
+}
+@keyframes twinkle{
+  0%,100%{opacity:0;transform:scale(.5)}
+  50%{opacity:var(--max-op,.8);transform:scale(1)}
+}
 </style>
 </head>
 <body>
@@ -748,13 +763,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
   <!-- MOON OVERLAY -->
   <div id="moon-overlay">
+    <canvas id="moon-confetti-canvas"></canvas>
     <button id="moon-close" onclick="closeMoon()">✕</button>
     <div id="moon-canvas-wrap">
       <div id="moon-glow"></div>
       <canvas id="moon-three-canvas"></canvas>
     </div>
     <div id="moon-tagline">
-      <a href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener" id="join-telcoin-btn">JOIN TELCOIN ↗</a>
+      <a href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener" id="join-telcoin-btn">SEND MONEY SMARTER TODAY ↗</a>
       <div id="visitor-counter-wrap">
         <div id="visitor-label">VISITORS</div>
         <div id="visitor-digits"></div>
@@ -770,7 +786,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div id="gc-value">$0.00B</div>
       <div id="gc-sub">$905B ANNUAL · WORLD BANK 2024 · ~$28,668/SEC</div>
       <div id="savings-toggle-wrap">
-        <span id="savings-toggle-label">TELCOIN SAVINGS VIEW</span>
+        <span id="savings-toggle-label">TELCOIN MODE</span>
         <label class="tog-pill" title="See where Telcoin is cheapest">
           <input type="checkbox" id="savings-chk" onchange="setSavingsMode(this.checked)">
           <span class="tog-slider"></span>
@@ -779,9 +795,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
     <!-- Savings stat badge -->
     <div id="savings-stat"></div>
-    <div id="tb-right"><div id="live-dot"></div>LIVE</div>
+    <div id="tb-right">
+      <div style="display:flex;align-items:center;gap:8px"><div id="live-dot"></div>LIVE</div>
+      <div id="data-status"><div id="sdot"></div><span id="stxt">Connecting…</span></div>
+    </div>
   </div>
-  <div id="data-status"><div id="sdot"></div><span id="stxt">Connecting…</span></div>
 
   <!-- SEARCH BAR -->
   <div id="search-wrap">
@@ -1337,7 +1355,17 @@ function fxClick(code){
 
 // ── LEADERBOARD ───────────────────────────────────────────────────────────────
 let lbOpen=false,lbTab='receivers';
-function toggleLB(){lbOpen=!lbOpen;g('leaderboard').classList.toggle('lb-open',lbOpen);document.getElementById('app').classList.toggle('lb-open',lbOpen);g('lb-arrow').textContent=lbOpen?'▼':'▲';g('mob-lb-btn').classList.toggle('active',lbOpen);if(lbOpen)renderLB();}
+function toggleLB(){
+  lbOpen=!lbOpen;
+  g('leaderboard').classList.toggle('lb-open',lbOpen);
+  document.getElementById('app').classList.toggle('lb-open',lbOpen);
+  g('lb-arrow').textContent=lbOpen?'▼':'▲';
+  g('mob-lb-btn').classList.toggle('active',lbOpen);
+  if(lbOpen)renderLB();
+  // Hide moon when leaderboard is open (it would overlap)
+  const em=g('easter-moon');
+  if(em){em.style.opacity=lbOpen?'0':'';em.style.pointerEvents=lbOpen?'none':'all';}
+}
 function setLbTab(tab){lbTab=tab;g('lb-tab-r').classList.toggle('active',tab==='receivers');g('lb-tab-s').classList.toggle('active',tab==='senders');renderLB();}
 function renderLB(){
   const data=LB[lbTab],isSend=lbTab==='senders',maxV=data[0].v;
@@ -1908,7 +1936,7 @@ function setSavingsMode(on){
     if(!Object.keys(savingsMap).length) computeSavings();
     const pct = Math.round(savingsTotal / savingsCoverage * 100);
 
-    if(label) label.textContent = 'TELCOIN CHEAPEST PROVIDER IN';
+    if(label) label.textContent = 'TELCOIN CHEAPEST IN';
     if(value){ value.textContent = savingsTotal + ' COUNTRIES'; value.style.fontSize='20px'; value.style.color='#00E5FF'; value.style.textShadow='0 0 24px rgba(0,229,255,.45)'; }
     if(sub)   sub.textContent   = pct + '% OF TRACKED CORRIDORS · CLICK ANY COUNTRY TO COMPARE';
     // savings-stat hidden — info shown in counter instead
@@ -2087,6 +2115,10 @@ function buildTelcoinTexture(){
 function openMoon(){
   const overlay = g('moon-overlay');
   overlay.classList.add('open');
+  // Launch confetti
+  launchMoonConfetti();
+  // Spawn twinkling stars in overlay
+  spawnMoonStars();
   // Visitor counter
   let visits = parseInt(localStorage.getItem('rm_moon_visits')||'0') + 1;
   localStorage.setItem('rm_moon_visits', visits);
@@ -2195,9 +2227,87 @@ function openMoon(){
   animateMoon();
 }
 
+// Confetti launcher
+function launchMoonConfetti(){
+  const canvas = g('moon-confetti-canvas');
+  if(!canvas) return;
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const COLORS = ['#00E5FF','#00B8D4','#ffffff','#80FFFF','#00FFC3','#3a9aff','#00e5a0'];
+  const pieces = Array.from({length:180}, ()=>({
+    x:  Math.random() * canvas.width,
+    y: -10 - Math.random()*80,
+    vx: (Math.random()-0.5)*6,
+    vy:  2 + Math.random()*5,
+    rot:  Math.random()*360,
+    drot: (Math.random()-0.5)*8,
+    w: 5 + Math.random()*8,
+    h: 3 + Math.random()*5,
+    col: COLORS[Math.floor(Math.random()*COLORS.length)],
+    alpha: 1,
+  }));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.rot+= p.drot;
+      p.vy += 0.08; // gravity
+      if(frame>80) p.alpha = Math.max(0, p.alpha-0.012);
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.col;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    frame++;
+    if(frame < 200) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+// Twinkling stars in moon overlay background
+let moonStarInterval = null;
+function spawnMoonStars(){
+  // Clear old stars
+  const overlay = g('moon-overlay');
+  overlay.querySelectorAll('.moon-star').forEach(s=>s.remove());
+  if(moonStarInterval) clearInterval(moonStarInterval);
+
+  function addStar(){
+    const star = document.createElement('div');
+    star.className = 'moon-star';
+    const size = 1 + Math.random()*3;
+    const dur  = 1.2 + Math.random()*2.8;
+    const maxOp= 0.4 + Math.random()*0.5;
+    const hue  = Math.random() > 0.7 ? '#00E5FF' : '#ffffff';
+    star.style.cssText = [
+      `width:${size}px`, `height:${size}px`,
+      `left:${Math.random()*100}%`, `top:${Math.random()*100}%`,
+      `background:${hue}`,
+      `--dur:${dur}s`, `--max-op:${maxOp}`,
+      `animation-delay:${Math.random()*dur}s`,
+      `box-shadow:0 0 ${size*2}px ${hue}`,
+    ].join(';');
+    overlay.appendChild(star);
+  }
+  // Initial burst
+  for(let i=0;i<80;i++) addStar();
+  // Keep adding
+  moonStarInterval = setInterval(()=>{ if(g('moon-overlay')?.classList.contains('open')) addStar(); }, 400);
+}
+
 function closeMoon(){
   g('moon-overlay').classList.remove('open');
   if(moonAnimId){cancelAnimationFrame(moonAnimId);moonAnimId=null;}
+  if(moonStarInterval){clearInterval(moonStarInterval);moonStarInterval=null;}
+  const overlay=g('moon-overlay');
+  if(overlay) overlay.querySelectorAll('.moon-star').forEach(s=>s.remove());
 }
 window.openMoon=openMoon;
 window.closeMoon=closeMoon;
