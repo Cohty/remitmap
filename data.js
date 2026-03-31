@@ -78,7 +78,7 @@ window.CURRENCY = {
   'Trinidad and Tobago':'TTD','Tunisia':'TND','Turkey':'TRY','UAE':'AED',
   'Uganda':'UGX','Ukraine':'UAH','United Kingdom':'GBP','United States':'USD',
   'Uruguay':'UYU','Uzbekistan':'UZS','Venezuela':'VES','Vietnam':'VND',
-  'Yemen':'YER','Zambia':'ZMW','Falkland Islands':'FKP'
+  'Yemen':'YER','Zambia':'ZMW','Falkland Islands':'FKP','Botswana':'BWP','Burundi':'BIF','Equatorial Guinea':'XAF','Eritrea':'ERN','Georgia':'GEL','Palestine':'ILS','Greenland':'DKK','Guyana':'GYD','Iceland':'ISK','Kosovo':'EUR','New Caledonia':'XPF','South Sudan':'SSP'
 };
 
 // ── TELCOIN CORRIDOR DATA ─────────────────────────────────────────────────────
@@ -470,5 +470,19 @@ window.MNO_DATA = {
 
   // ── SPECIAL / TERRITORIES ──
   'Falkland Islands':{ mno:'Sure South Atlantic', subs:'3,500', share:'100%', outflow:'N/A', note:'Sure South Atlantic is the sole operator providing mobile services to the Falkland Islands\' small population of ~3,500. Remittance flows are negligible given the territory\'s small size.' },
+
+  // ── ADDITIONAL COUNTRIES (previously unclickable on globe) ────────────────
+  'Botswana':{ mno:'Mascom Wireless', subs:'2.0 million', share:'42%', outflow:'$42M', note:'Mascom Wireless leads Botswana ahead of Orange and BTC Mobile. Botswana is one of Africa\'s most stable economies with a small but growing remittance footprint.' },
+  'Burundi':{ mno:'Econet Leo', subs:'3.8 million', share:'48%', outflow:'$15M', note:'Econet Leo dominates Burundi\'s mobile market. One of the world\'s poorest countries — diaspora in Belgium and Tanzania send critical flows (~$56M annually).' },
+  'Equatorial Guinea':{ mno:'Muni (GETel)', subs:'0.6 million', share:'52%', outflow:'$105M', note:'GETel\'s Muni leads Equatorial Guinea. As a small oil exporter, EG sends more than it receives and has limited formal remittance infrastructure.' },
+  'Eritrea':{ mno:'EriTel', subs:'1.4 million', share:'100%', outflow:'$42M', note:'EriTel is the sole state-owned operator. Eritrea has one of the world\'s highest diaspora ratios — over 500K Eritreans abroad send ~$400M annually despite strict government controls.' },
+  'Georgia':{ mno:'Magti', subs:'2.1 million', share:'42%', outflow:'$820M', note:'Magti leads Georgia ahead of Geocell and Beeline. Georgia receives ~$2.7B in remittances (16% of GDP) primarily from Russia, Greece, Italy, and the US.' },
+  'Palestine':{ mno:'Jawwal (PalTel)', subs:'3.6 million', share:'60%', outflow:'$105M', note:'Jawwal (PalTel Group) is the dominant operator. Palestinian diaspora in Jordan, Chile, US, and Gulf states send vital flows (~$2.8B, ~20% of GDP).' },
+  'Greenland':{ mno:'Tusass (Tele-Post)', subs:'48,000', share:'~100%', outflow:'N/A', note:'Tusass (formerly Tele-Post) is Greenland\'s sole operator serving ~56,000 people. As an autonomous Danish territory, remittance flows are minimal and linked primarily to Denmark.' },
+  'Guyana':{ mno:'Digicel Guyana', subs:'0.55 million', share:'53%', outflow:'$26M', note:'Digicel Guyana leads ahead of GTT. The large Guyanese diaspora in New York and Toronto sends ~$480M annually — among the highest remittance-to-GDP ratios in the Americas.' },
+  'Iceland':{ mno:'Síminn', subs:'0.23 million', share:'44%', outflow:'$205M', note:'Síminn leads Iceland\'s small market ahead of Nova and Vodafone Iceland. Iceland sends flows to Poland and Eastern Europe from its immigrant workforce.' },
+  'Kosovo':{ mno:'Vala (PTK Telecom)', subs:'1.05 million', share:'55%', outflow:'$205M', note:'Vala (PTK Telecom) dominates Kosovo. Remittances (~$1.0B, ~16% of GDP) from the large diaspora in Germany, Switzerland, and Austria are a cornerstone of the economy.' },
+  'New Caledonia':{ mno:'Mobilis (OPT-NC)', subs:'0.26 million', share:'100%', outflow:'N/A', note:'Mobilis (OPT-NC, state-owned) is the sole operator in this French territory. As a high-income Pacific territory, remittance flows are limited and linked to France.' },
+  'South Sudan':{ mno:'MTN South Sudan', subs:'2.9 million', share:'42%', outflow:'$42M', note:'MTN South Sudan leads ahead of Zain and Digitel. Remittances are critical to South Sudan\'s conflict-affected population but highly constrained by infrastructure limitations.' },
 
 };
