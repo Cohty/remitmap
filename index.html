@@ -25,6 +25,7 @@
   <link rel="icon" type="image/png" sizes="96x96"   href="/icons/icon-96.png">
   <link rel="shortcut icon"         href="/icons/icon-96.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script src="data.js"></script>
 <style>
@@ -576,12 +577,104 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   #savings-legend{display:none!important}
   #savings-stat{font-size:8px;top:72px}
 }
+
+/* ══ EASTER EGG — TELCOIN MOON ══ */
+#easter-moon{
+  position:absolute;
+  cursor:pointer;
+  border-radius:50%;
+  z-index:24;
+  pointer-events:all;
+  transition:opacity .4s, transform .4s;
+  opacity:.18;
+  /* Position: upper right, in open starfield */
+  top:110px; right:280px;
+  width:28px; height:28px;
+}
+#easter-moon:hover{ opacity:.55; transform:scale(1.15); }
+
+/* Moon overlay */
+#moon-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,8,.96);
+  display:none;align-items:center;justify-content:center;flex-direction:column;
+  backdrop-filter:blur(8px);
+  animation:moonFadeIn .5s ease;
+}
+#moon-overlay.open{display:flex}
+@keyframes moonFadeIn{from{opacity:0}to{opacity:1}}
+
+#moon-canvas-wrap{
+  position:relative;width:320px;height:320px;
+}
+#moon-three-canvas{width:100%!important;height:100%!important;border-radius:50%;}
+
+#moon-close{
+  position:absolute;top:24px;right:24px;
+  font-size:22px;color:#7aa8cc;cursor:pointer;
+  background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.12);
+  border-radius:50%;width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;z-index:10000;
+}
+#moon-close:hover{color:#e8f4ff;background:rgba(255,255,255,.12)}
+
+#moon-tagline{
+  margin-top:28px;text-align:center;
+  font-family:'Space Mono',monospace;
+}
+#moon-tagline h2{
+  font-size:13px;letter-spacing:.22em;font-weight:700;
+  color:#00E5FF;text-transform:uppercase;margin-bottom:6px;
+}
+#moon-tagline p{
+  font-size:10px;letter-spacing:.1em;color:#7aa8cc;
+}
+#moon-tagline a{
+  color:#00E5FF;text-decoration:none;font-weight:700;
+  border-bottom:.5px solid rgba(0,229,255,.4);
+  transition:border-color .15s;
+}
+#moon-tagline a:hover{border-bottom-color:#00E5FF}
+
+/* Subtle glow ring behind moon canvas */
+#moon-glow{
+  position:absolute;inset:-20px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(0,229,255,.18) 0%, transparent 70%);
+  pointer-events:none;
+  animation:moonPulse 3s ease-in-out infinite;
+}
+@keyframes moonPulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+
+@media(max-width:680px){
+  #easter-moon{top:100px;right:20px;width:22px;height:22px}
+  #moon-canvas-wrap{width:260px;height:260px}
+}
 </style>
 </head>
 <body>
 <div id="app">
   <canvas id="stars"></canvas>
   <canvas id="globe-canvas"></canvas>
+
+  <!-- EASTER EGG MOON -->
+  <canvas id="easter-moon" onclick="openMoon()" title="🌙"></canvas>
+
+  <!-- MOON OVERLAY -->
+  <div id="moon-overlay">
+    <button id="moon-close" onclick="closeMoon()">✕</button>
+    <div id="moon-canvas-wrap">
+      <div id="moon-glow"></div>
+      <canvas id="moon-three-canvas"></canvas>
+    </div>
+    <div id="moon-tagline">
+      <h2>🌙 To The Moon</h2>
+      <p>Blockchain remittances · Near-instant · Ultra-low cost<br>
+      <br><a href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener">Join Telcoin ↗</a></p>
+    </div>
+  </div>
+
 
   <div id="topbar">
     <div id="tb-left"><h1>RemitMap</h1><p>Global MNO &amp; Remittance Intelligence · Click any country</p></div>
@@ -798,9 +891,9 @@ function g(id){return document.getElementById(id);}
 
 // ── ISO MAPS ──────────────────────────────────────────────────────────────────
 const NAMES={4:'Afghanistan',8:'Albania',12:'Algeria',24:'Angola',32:'Argentina',36:'Australia',40:'Austria',50:'Bangladesh',56:'Belgium',64:'Bhutan',68:'Bolivia',76:'Brazil',100:'Bulgaria',104:'Myanmar',116:'Cambodia',120:'Cameroon',124:'Canada',144:'Sri Lanka',152:'Chile',156:'China',158:'Taiwan',170:'Colombia',178:'Republic of Congo',180:'DR Congo',188:'Costa Rica',191:'Croatia',192:'Cuba',196:'Cyprus',203:'Czech Republic',208:'Denmark',214:'Dominican Republic',218:'Ecuador',222:'El Salvador',231:'Ethiopia',238:'Falkland Islands',246:'Finland',250:'France',266:'Gabon',276:'Germany',288:'Ghana',300:'Greece',320:'Guatemala',324:'Guinea',332:'Haiti',340:'Honduras',348:'Hungary',356:'India',360:'Indonesia',364:'Iran',368:'Iraq',372:'Ireland',376:'Israel',380:'Italy',388:'Jamaica',392:'Japan',398:'Kazakhstan',400:'Jordan',404:'Kenya',408:'North Korea',410:'South Korea',414:'Kuwait',418:'Laos',422:'Lebanon',426:'Lesotho',430:'Liberia',434:'Libya',440:'Lithuania',442:'Luxembourg',450:'Madagascar',454:'Malawi',458:'Malaysia',466:'Mali',484:'Mexico',496:'Mongolia',504:'Morocco',508:'Mozambique',516:'Namibia',524:'Nepal',528:'Netherlands',554:'New Zealand',558:'Nicaragua',562:'Niger',566:'Nigeria',578:'Norway',586:'Pakistan',591:'Panama',598:'Papua New Guinea',604:'Peru',608:'Philippines',616:'Poland',620:'Portugal',634:'Qatar',642:'Romania',643:'Russia',646:'Rwanda',682:'Saudi Arabia',686:'Senegal',694:'Sierra Leone',703:'Slovakia',704:'Vietnam',705:'Slovenia',706:'Somalia',710:'South Africa',716:'Zimbabwe',724:'Spain',729:'Sudan',740:'Suriname',752:'Sweden',756:'Switzerland',760:'Syria',762:'Tajikistan',764:'Thailand',768:'Togo',780:'Trinidad and Tobago',784:'UAE',788:'Tunisia',792:'Turkey',800:'Uganda',804:'Ukraine',818:'Egypt',826:'United Kingdom',834:'Tanzania',840:'United States',858:'Uruguay',860:'Uzbekistan',862:'Venezuela',887:'Yemen',894:'Zambia',
-  72:'Botswana',108:'Burundi',226:'Equatorial Guinea',232:'Eritrea',268:'Georgia',275:'Palestine',304:'Greenland',328:'Guyana',352:'Iceland',383:'Kosovo',540:'New Caledonia',736:'South Sudan',31:'Azerbaijan',51:'Armenia',90:'Solomon Islands',112:'Belarus',140:'Central African Republic',233:'Estonia',242:'Fiji',344:'Hong Kong',428:'Latvia',478:'Mauritania',498:'Moldova',499:'Montenegro',548:'Vanuatu',626:'Timor-Leste',732:'Western Sahara',795:'Turkmenistan',807:'North Macedonia'};
-const ISO2={'Afghanistan':'AF','Albania':'AL','Algeria':'DZ','Angola':'AO','Argentina':'AR','Australia':'AU','Austria':'AT','Bangladesh':'BD','Belgium':'BE','Bhutan':'BT','Bolivia':'BO','Brazil':'BR','Bulgaria':'BG','Myanmar':'MM','Cambodia':'KH','Cameroon':'CM','Canada':'CA','Sri Lanka':'LK','Chile':'CL','China':'CN','Taiwan':'TW','Colombia':'CO','Republic of Congo':'CG','DR Congo':'CD','Costa Rica':'CR','Croatia':'HR','Cuba':'CU','Cyprus':'CY','Czech Republic':'CZ','Denmark':'DK','Dominican Republic':'DO','Ecuador':'EC','Egypt':'EG','El Salvador':'SV','Ethiopia':'ET','Falkland Islands':'FK','Finland':'FI','France':'FR','Gabon':'GA','Germany':'DE','Ghana':'GH','Greece':'GR','Guatemala':'GT','Guinea':'GN','Haiti':'HT','Honduras':'HN','Hungary':'HU','India':'IN','Indonesia':'ID','Iran':'IR','Iraq':'IQ','Ireland':'IE','Israel':'IL','Italy':'IT','Jamaica':'JM','Japan':'JP','Jordan':'JO','Kazakhstan':'KZ','Kenya':'KE','North Korea':'KP','South Korea':'KR','Kuwait':'KW','Laos':'LA','Lebanon':'LB','Lesotho':'LS','Liberia':'LR','Libya':'LY','Lithuania':'LT','Luxembourg':'LU','Madagascar':'MG','Malawi':'MW','Malaysia':'MY','Mali':'ML','Mexico':'MX','Mongolia':'MN','Morocco':'MA','Mozambique':'MZ','Namibia':'NA','Nepal':'NP','Netherlands':'NL','New Zealand':'NZ','Nicaragua':'NI','Niger':'NE','Nigeria':'NG','Norway':'NO','Pakistan':'PK','Panama':'PA','Papua New Guinea':'PG','Peru':'PE','Philippines':'PH','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO','Russia':'RU','Rwanda':'RW','Saudi Arabia':'SA','Senegal':'SN','Sierra Leone':'SL','Slovakia':'SK','Slovenia':'SI','Somalia':'SO','South Africa':'ZA','Zimbabwe':'ZW','Spain':'ES','Sudan':'SD','Suriname':'SR','Sweden':'SE','Switzerland':'CH','Syria':'SY','Tajikistan':'TJ','Tanzania':'TZ','Thailand':'TH','Togo':'TG','Trinidad and Tobago':'TT','Tunisia':'TN','Turkey':'TR','UAE':'AE','Uganda':'UG','Ukraine':'UA','United Kingdom':'GB','United States':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE','Vietnam':'VN','Yemen':'YE','Zambia':'ZM','Botswana':'BW','Burundi':'BI','Equatorial Guinea':'GQ','Eritrea':'ER','Georgia':'GE','Palestine':'PS','Greenland':'GL','Guyana':'GY','Iceland':'IS','Kosovo':'XK','New Caledonia':'NC','South Sudan':'SS','Azerbaijan':'AZ','Armenia':'AM','Solomon Islands':'SB','Belarus':'BY','Central African Republic':'CF','Estonia':'EE','Fiji':'FJ','Hong Kong':'HK','Latvia':'LV','Mauritania':'MR','Moldova':'MD','Montenegro':'ME','Vanuatu':'VU','Timor-Leste':'TL','Western Sahara':'EH','Turkmenistan':'TM','North Macedonia':'MK'};
-const CENS={'Afghanistan':[67.7,33.9],'Albania':[20.2,41.2],'Algeria':[2.6,28.0],'Angola':[17.9,-11.2],'Argentina':[-63.6,-38.4],'Australia':[133.8,-25.3],'Austria':[14.5,47.5],'Bangladesh':[90.4,23.7],'Belgium':[4.5,50.5],'Bhutan':[90.4,27.5],'Bolivia':[-64.9,-16.3],'Brazil':[-51.9,-14.2],'Bulgaria':[25.5,42.7],'Myanmar':[96.7,17.1],'Cambodia':[104.9,12.6],'Cameroon':[12.4,3.9],'Canada':[-96.8,56.1],'Sri Lanka':[80.7,7.9],'Chile':[-71.5,-35.7],'China':[104.2,35.9],'Taiwan':[120.9,23.7],'Colombia':[-74.3,4.1],'Republic of Congo':[15.8,-0.2],'DR Congo':[23.7,-4.0],'Costa Rica':[-83.8,9.7],'Croatia':[16.4,45.1],'Cuba':[-79.5,21.5],'Cyprus':[33.1,35.1],'Czech Republic':[15.5,49.8],'Denmark':[10.0,56.3],'Dominican Republic':[-70.2,18.7],'Ecuador':[-78.1,-1.8],'Egypt':[30.8,26.8],'El Salvador':[-88.9,13.8],'Ethiopia':[40.5,9.1],'Falkland Islands':[-59.5,-51.8],'Finland':[25.7,61.9],'France':[2.2,46.2],'Gabon':[11.6,-0.8],'Germany':[10.5,51.2],'Ghana':[-1.0,7.9],'Greece':[21.8,39.1],'Guatemala':[-90.2,15.8],'Guinea':[-11.3,11.0],'Haiti':[-72.3,18.9],'Honduras':[-86.6,15.2],'Hungary':[19.5,47.2],'India':[78.9,20.6],'Indonesia':[113.9,-0.8],'Iran':[53.7,32.4],'Iraq':[43.7,33.2],'Ireland':[-8.2,53.4],'Israel':[34.9,31.5],'Italy':[12.6,42.5],'Jamaica':[-77.3,18.1],'Japan':[138.3,36.2],'Jordan':[36.2,30.6],'Kazakhstan':[66.9,48.0],'Kenya':[37.9,0.0],'North Korea':[127.5,40.3],'South Korea':[127.8,36.5],'Kuwait':[47.5,29.3],'Laos':[103.9,17.4],'Lebanon':[35.9,33.9],'Lesotho':[28.2,-29.6],'Liberia':[-9.4,6.4],'Libya':[17.2,27.0],'Lithuania':[23.9,55.2],'Luxembourg':[6.1,49.8],'Madagascar':[46.9,-19.4],'Malawi':[34.3,-13.3],'Malaysia':[109.7,4.2],'Mali':[-2.0,17.6],'Mexico':[-102.6,23.6],'Mongolia':[103.8,46.9],'Morocco':[-7.1,31.8],'Mozambique':[35.5,-18.7],'Namibia':[18.5,-22.0],'Nepal':[84.1,28.4],'Netherlands':[5.3,52.1],'New Zealand':[172.0,-42.0],'Nicaragua':[-85.2,12.9],'Niger':[8.1,16.1],'Nigeria':[8.7,9.1],'Norway':[8.5,60.5],'Pakistan':[69.3,30.4],'Panama':[-80.8,8.5],'Papua New Guinea':[143.9,-6.3],'Peru':[-75.0,-9.2],'Philippines':[121.8,12.9],'Poland':[19.1,52.1],'Portugal':[-8.2,39.4],'Qatar':[51.2,25.4],'Romania':[24.9,45.9],'Russia':[99.0,61.5],'Rwanda':[29.9,-1.9],'Saudi Arabia':[45.1,24.2],'Senegal':[-14.5,14.5],'Sierra Leone':[-11.8,8.5],'Slovakia':[19.7,48.7],'Slovenia':[14.8,46.1],'Somalia':[46.2,6.1],'South Africa':[25.1,-29.0],'Zimbabwe':[29.2,-19.0],'Spain':[-3.7,40.2],'Sudan':[30.2,15.9],'Suriname':[-56.0,4.0],'Sweden':[15.2,62.2],'Switzerland':[8.2,46.8],'Syria':[38.3,35.0],'Tajikistan':[71.3,38.9],'Tanzania':[34.9,-6.4],'Thailand':[101.0,15.9],'Togo':[0.8,8.6],'Trinidad and Tobago':[-61.2,10.7],'Tunisia':[9.5,33.9],'Turkey':[35.2,39.1],'UAE':[53.8,24.0],'Uganda':[32.3,1.4],'Ukraine':[31.2,49.0],'United Kingdom':[-3.4,55.4],'United States':[-99.1,38.5],'Uruguay':[-56.0,-32.5],'Uzbekistan':[63.9,41.4],'Venezuela':[-66.6,6.4],'Vietnam':[108.3,14.1],'Yemen':[47.6,15.9],'Zambia':[27.8,-13.1],'Botswana':[24.7,-22.3],'Burundi':[29.9,-3.4],'Equatorial Guinea':[10.3,1.7],'Eritrea':[39.8,15.2],'Georgia':[43.4,42.3],'Palestine':[35.2,31.9],'Greenland':[-42.0,72.0],'Guyana':[-59.0,5.0],'Iceland':[-19.0,65.0],'Kosovo':[20.9,42.6],'New Caledonia':[165.6,-20.9],'South Sudan':[31.3,7.0],'Azerbaijan':[47.6,40.3],'Armenia':[45.0,40.1],'Solomon Islands':[160.2,-9.6],'Belarus':[27.9,53.7],'Central African Republic':[20.9,6.6],'Estonia':[25.0,58.6],'Fiji':[178.0,-18.0],'Hong Kong':[114.2,22.4],'Latvia':[24.9,56.9],'Mauritania':[-10.9,20.3],'Moldova':[28.4,47.4],'Montenegro':[19.4,42.7],'Vanuatu':[166.9,-15.4],'Timor-Leste':[125.7,-8.8],'Western Sahara':[-13.0,24.5],'Turkmenistan':[58.4,39.0],'North Macedonia':[21.7,41.6]};
+  72:'Botswana',108:'Burundi',226:'Equatorial Guinea',232:'Eritrea',268:'Georgia',275:'Palestine',304:'Greenland',328:'Guyana',352:'Iceland',383:'Kosovo',540:'New Caledonia',736:'South Sudan',31:'Azerbaijan',51:'Armenia',90:'Solomon Islands',112:'Belarus',140:'Central African Republic',233:'Estonia',242:'Fiji',344:'Hong Kong',428:'Latvia',478:'Mauritania',498:'Moldova',499:'Montenegro',548:'Vanuatu',626:'Timor-Leste',732:'Western Sahara',795:'Turkmenistan',807:'North Macedonia',70:'Bosnia and Herzegovina',148:'Chad',270:'Gambia',384:'Ivory Coast',438:'Liechtenstein',500:'Montserrat',512:'Oman',624:'Guinea-Bissau',660:'Anguilla',688:'Serbia',854:'Burkina Faso',882:'Samoa'};
+const ISO2={'Afghanistan':'AF','Albania':'AL','Algeria':'DZ','Angola':'AO','Argentina':'AR','Australia':'AU','Austria':'AT','Bangladesh':'BD','Belgium':'BE','Bhutan':'BT','Bolivia':'BO','Brazil':'BR','Bulgaria':'BG','Myanmar':'MM','Cambodia':'KH','Cameroon':'CM','Canada':'CA','Sri Lanka':'LK','Chile':'CL','China':'CN','Taiwan':'TW','Colombia':'CO','Republic of Congo':'CG','DR Congo':'CD','Costa Rica':'CR','Croatia':'HR','Cuba':'CU','Cyprus':'CY','Czech Republic':'CZ','Denmark':'DK','Dominican Republic':'DO','Ecuador':'EC','Egypt':'EG','El Salvador':'SV','Ethiopia':'ET','Falkland Islands':'FK','Finland':'FI','France':'FR','Gabon':'GA','Germany':'DE','Ghana':'GH','Greece':'GR','Guatemala':'GT','Guinea':'GN','Haiti':'HT','Honduras':'HN','Hungary':'HU','India':'IN','Indonesia':'ID','Iran':'IR','Iraq':'IQ','Ireland':'IE','Israel':'IL','Italy':'IT','Jamaica':'JM','Japan':'JP','Jordan':'JO','Kazakhstan':'KZ','Kenya':'KE','North Korea':'KP','South Korea':'KR','Kuwait':'KW','Laos':'LA','Lebanon':'LB','Lesotho':'LS','Liberia':'LR','Libya':'LY','Lithuania':'LT','Luxembourg':'LU','Madagascar':'MG','Malawi':'MW','Malaysia':'MY','Mali':'ML','Mexico':'MX','Mongolia':'MN','Morocco':'MA','Mozambique':'MZ','Namibia':'NA','Nepal':'NP','Netherlands':'NL','New Zealand':'NZ','Nicaragua':'NI','Niger':'NE','Nigeria':'NG','Norway':'NO','Pakistan':'PK','Panama':'PA','Papua New Guinea':'PG','Peru':'PE','Philippines':'PH','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO','Russia':'RU','Rwanda':'RW','Saudi Arabia':'SA','Senegal':'SN','Sierra Leone':'SL','Slovakia':'SK','Slovenia':'SI','Somalia':'SO','South Africa':'ZA','Zimbabwe':'ZW','Spain':'ES','Sudan':'SD','Suriname':'SR','Sweden':'SE','Switzerland':'CH','Syria':'SY','Tajikistan':'TJ','Tanzania':'TZ','Thailand':'TH','Togo':'TG','Trinidad and Tobago':'TT','Tunisia':'TN','Turkey':'TR','UAE':'AE','Uganda':'UG','Ukraine':'UA','United Kingdom':'GB','United States':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE','Vietnam':'VN','Yemen':'YE','Zambia':'ZM','Botswana':'BW','Burundi':'BI','Equatorial Guinea':'GQ','Eritrea':'ER','Georgia':'GE','Palestine':'PS','Greenland':'GL','Guyana':'GY','Iceland':'IS','Kosovo':'XK','New Caledonia':'NC','South Sudan':'SS','Azerbaijan':'AZ','Armenia':'AM','Solomon Islands':'SB','Belarus':'BY','Central African Republic':'CF','Estonia':'EE','Fiji':'FJ','Hong Kong':'HK','Latvia':'LV','Mauritania':'MR','Moldova':'MD','Montenegro':'ME','Vanuatu':'VU','Timor-Leste':'TL','Western Sahara':'EH','Turkmenistan':'TM','North Macedonia':'MK','Bosnia and Herzegovina':'BA','Chad':'TD','Gambia':'GM','Ivory Coast':'CI','Liechtenstein':'LI','Montserrat':'MS','Oman':'OM','Guinea-Bissau':'GW','Anguilla':'AI','Serbia':'RS','Burkina Faso':'BF','Samoa':'WS'};
+const CENS={'Afghanistan':[67.7,33.9],'Albania':[20.2,41.2],'Algeria':[2.6,28.0],'Angola':[17.9,-11.2],'Argentina':[-63.6,-38.4],'Australia':[133.8,-25.3],'Austria':[14.5,47.5],'Bangladesh':[90.4,23.7],'Belgium':[4.5,50.5],'Bhutan':[90.4,27.5],'Bolivia':[-64.9,-16.3],'Brazil':[-51.9,-14.2],'Bulgaria':[25.5,42.7],'Myanmar':[96.7,17.1],'Cambodia':[104.9,12.6],'Cameroon':[12.4,3.9],'Canada':[-96.8,56.1],'Sri Lanka':[80.7,7.9],'Chile':[-71.5,-35.7],'China':[104.2,35.9],'Taiwan':[120.9,23.7],'Colombia':[-74.3,4.1],'Republic of Congo':[15.8,-0.2],'DR Congo':[23.7,-4.0],'Costa Rica':[-83.8,9.7],'Croatia':[16.4,45.1],'Cuba':[-79.5,21.5],'Cyprus':[33.1,35.1],'Czech Republic':[15.5,49.8],'Denmark':[10.0,56.3],'Dominican Republic':[-70.2,18.7],'Ecuador':[-78.1,-1.8],'Egypt':[30.8,26.8],'El Salvador':[-88.9,13.8],'Ethiopia':[40.5,9.1],'Falkland Islands':[-59.5,-51.8],'Finland':[25.7,61.9],'France':[2.2,46.2],'Gabon':[11.6,-0.8],'Germany':[10.5,51.2],'Ghana':[-1.0,7.9],'Greece':[21.8,39.1],'Guatemala':[-90.2,15.8],'Guinea':[-11.3,11.0],'Haiti':[-72.3,18.9],'Honduras':[-86.6,15.2],'Hungary':[19.5,47.2],'India':[78.9,20.6],'Indonesia':[113.9,-0.8],'Iran':[53.7,32.4],'Iraq':[43.7,33.2],'Ireland':[-8.2,53.4],'Israel':[34.9,31.5],'Italy':[12.6,42.5],'Jamaica':[-77.3,18.1],'Japan':[138.3,36.2],'Jordan':[36.2,30.6],'Kazakhstan':[66.9,48.0],'Kenya':[37.9,0.0],'North Korea':[127.5,40.3],'South Korea':[127.8,36.5],'Kuwait':[47.5,29.3],'Laos':[103.9,17.4],'Lebanon':[35.9,33.9],'Lesotho':[28.2,-29.6],'Liberia':[-9.4,6.4],'Libya':[17.2,27.0],'Lithuania':[23.9,55.2],'Luxembourg':[6.1,49.8],'Madagascar':[46.9,-19.4],'Malawi':[34.3,-13.3],'Malaysia':[109.7,4.2],'Mali':[-2.0,17.6],'Mexico':[-102.6,23.6],'Mongolia':[103.8,46.9],'Morocco':[-7.1,31.8],'Mozambique':[35.5,-18.7],'Namibia':[18.5,-22.0],'Nepal':[84.1,28.4],'Netherlands':[5.3,52.1],'New Zealand':[172.0,-42.0],'Nicaragua':[-85.2,12.9],'Niger':[8.1,16.1],'Nigeria':[8.7,9.1],'Norway':[8.5,60.5],'Pakistan':[69.3,30.4],'Panama':[-80.8,8.5],'Papua New Guinea':[143.9,-6.3],'Peru':[-75.0,-9.2],'Philippines':[121.8,12.9],'Poland':[19.1,52.1],'Portugal':[-8.2,39.4],'Qatar':[51.2,25.4],'Romania':[24.9,45.9],'Russia':[99.0,61.5],'Rwanda':[29.9,-1.9],'Saudi Arabia':[45.1,24.2],'Senegal':[-14.5,14.5],'Sierra Leone':[-11.8,8.5],'Slovakia':[19.7,48.7],'Slovenia':[14.8,46.1],'Somalia':[46.2,6.1],'South Africa':[25.1,-29.0],'Zimbabwe':[29.2,-19.0],'Spain':[-3.7,40.2],'Sudan':[30.2,15.9],'Suriname':[-56.0,4.0],'Sweden':[15.2,62.2],'Switzerland':[8.2,46.8],'Syria':[38.3,35.0],'Tajikistan':[71.3,38.9],'Tanzania':[34.9,-6.4],'Thailand':[101.0,15.9],'Togo':[0.8,8.6],'Trinidad and Tobago':[-61.2,10.7],'Tunisia':[9.5,33.9],'Turkey':[35.2,39.1],'UAE':[53.8,24.0],'Uganda':[32.3,1.4],'Ukraine':[31.2,49.0],'United Kingdom':[-3.4,55.4],'United States':[-99.1,38.5],'Uruguay':[-56.0,-32.5],'Uzbekistan':[63.9,41.4],'Venezuela':[-66.6,6.4],'Vietnam':[108.3,14.1],'Yemen':[47.6,15.9],'Zambia':[27.8,-13.1],'Botswana':[24.7,-22.3],'Burundi':[29.9,-3.4],'Equatorial Guinea':[10.3,1.7],'Eritrea':[39.8,15.2],'Georgia':[43.4,42.3],'Palestine':[35.2,31.9],'Greenland':[-42.0,72.0],'Guyana':[-59.0,5.0],'Iceland':[-19.0,65.0],'Kosovo':[20.9,42.6],'New Caledonia':[165.6,-20.9],'South Sudan':[31.3,7.0],'Azerbaijan':[47.6,40.3],'Armenia':[45.0,40.1],'Solomon Islands':[160.2,-9.6],'Belarus':[27.9,53.7],'Central African Republic':[20.9,6.6],'Estonia':[25.0,58.6],'Fiji':[178.0,-18.0],'Hong Kong':[114.2,22.4],'Latvia':[24.9,56.9],'Mauritania':[-10.9,20.3],'Moldova':[28.4,47.4],'Montenegro':[19.4,42.7],'Vanuatu':[166.9,-15.4],'Timor-Leste':[125.7,-8.8],'Western Sahara':[-13.0,24.5],'Turkmenistan':[58.4,39.0],'North Macedonia':[21.7,41.6],'Bosnia and Herzegovina':[17.8,44.2],'Chad':[18.7,15.5],'Gambia':[-15.3,13.4],'Ivory Coast':[-5.6,7.5],'Liechtenstein':[9.5,47.2],'Montserrat':[-62.2,16.7],'Oman':[57.6,21.5],'Guinea-Bissau':[-15.2,11.8],'Anguilla':[-63.1,18.2],'Serbia':[21.0,44.0],'Burkina Faso':[-1.6,12.4],'Samoa':[-172.5,-13.8]};
 
 // ── CORRIDORS ─────────────────────────────────────────────────────────────────
 const CORRIDORS=[
@@ -1742,6 +1835,216 @@ function spawnSavingsArc(){
     return;
   }
 }
+
+
+// ══ EASTER EGG — TELCOIN MOON ════════════════════════════════════════════════
+(function(){
+  // Draw the subtle background moon in the starfield
+  const mc = g('easter-moon');
+  const sz = parseInt(getComputedStyle(mc).width) || 28;
+  mc.width = sz * 2; mc.height = sz * 2; // retina
+  const mx = mc.getContext('2d');
+  const r = sz;
+  // Full moon base
+  const grad = mx.createRadialGradient(r*.9, r*.8, 0, r, r, r);
+  grad.addColorStop(0,   'rgba(210,240,255,1)');
+  grad.addColorStop(.45, 'rgba(180,220,245,1)');
+  grad.addColorStop(.75, 'rgba(140,190,220,1)');
+  grad.addColorStop(1,   'rgba(80,130,170,1)');
+  mx.beginPath();mx.arc(r,r,r*.92,0,Math.PI*2);
+  mx.fillStyle=grad;mx.fill();
+  // Shadow for crescent feel
+  const shadow = mx.createRadialGradient(r*1.3, r*.7, 0, r*1.1, r*.8, r*.9);
+  shadow.addColorStop(0, 'rgba(0,5,18,.85)');
+  shadow.addColorStop(1, 'rgba(0,5,18,0)');
+  mx.beginPath();mx.arc(r,r,r*.92,0,Math.PI*2);
+  mx.fillStyle=shadow;mx.fill();
+  // Subtle craters
+  [[r*.55,r*.45,r*.11],[r*.75,r*.7,r*.07],[r*.35,r*.65,r*.05]].forEach(([cx,cy,cr])=>{
+    mx.beginPath();mx.arc(cx,cy,cr,0,Math.PI*2);
+    mx.fillStyle='rgba(100,150,190,.25)';mx.fill();
+  });
+})();
+
+// Three.js moon scene
+let moonScene=null, moonRenderer=null, moonAnimId=null;
+
+function buildTelcoinTexture(){
+  const size = 1024;
+  const tc = document.createElement('canvas');
+  tc.width = size; tc.height = size;
+  const tx = tc.getContext('2d');
+
+  // Deep space background base
+  tx.fillStyle = '#020c1a';
+  tx.fillRect(0,0,size,size);
+
+  // Moon surface — subtle terrain with Telcoin cyan tones
+  for(let i=0;i<60;i++){
+    const x=Math.random()*size, y=Math.random()*size;
+    const r=10+Math.random()*60;
+    const g2=tx.createRadialGradient(x,y,0,x,y,r);
+    g2.addColorStop(0,'rgba(0,180,210,.08)');
+    g2.addColorStop(1,'rgba(0,0,0,0)');
+    tx.beginPath();tx.arc(x,y,r,0,Math.PI*2);
+    tx.fillStyle=g2;tx.fill();
+  }
+
+  // Subtle craters
+  [[320,300,55],[680,420,40],[200,650,35],[750,200,28],[500,700,45],[150,200,30]].forEach(([cx,cy,cr])=>{
+    const rg=tx.createRadialGradient(cx,cy,0,cx,cy,cr);
+    rg.addColorStop(0,'rgba(0,50,80,.6)');
+    rg.addColorStop(.7,'rgba(0,150,180,.12)');
+    rg.addColorStop(1,'rgba(0,229,255,.05)');
+    tx.beginPath();tx.arc(cx,cy,cr,0,Math.PI*2);
+    tx.fillStyle=rg;tx.fill();
+    // crater rim
+    tx.beginPath();tx.arc(cx,cy,cr,0,Math.PI*2);
+    tx.strokeStyle='rgba(0,229,255,.18)';tx.lineWidth=1.5;tx.stroke();
+  });
+
+  // Telcoin "t" logo — centered, large, glowing cyan
+  const cx=size/2, cy=size/2+20;
+
+  // Outer glow
+  const glow=tx.createRadialGradient(cx,cy,0,cx,cy,260);
+  glow.addColorStop(0,'rgba(0,229,255,.22)');
+  glow.addColorStop(.5,'rgba(0,150,200,.08)');
+  glow.addColorStop(1,'rgba(0,0,0,0)');
+  tx.beginPath();tx.arc(cx,cy,260,0,Math.PI*2);
+  tx.fillStyle=glow;tx.fill();
+
+  // Draw the Telcoin hexagon shape
+  tx.save();
+  tx.translate(cx, cy);
+  const hs = 200;
+  tx.beginPath();
+  for(let i=0;i<6;i++){
+    const angle = Math.PI/6 + i*Math.PI/3;
+    const px = Math.cos(angle)*hs, py = Math.sin(angle)*hs;
+    i===0 ? tx.moveTo(px,py) : tx.lineTo(px,py);
+  }
+  tx.closePath();
+  // Hexagon fill — translucent cyan
+  const hg=tx.createLinearGradient(-hs,-hs,hs,hs);
+  hg.addColorStop(0,'rgba(0,200,240,.55)');
+  hg.addColorStop(1,'rgba(0,100,200,.45)');
+  tx.fillStyle=hg;tx.fill();
+  tx.strokeStyle='rgba(0,229,255,.9)';tx.lineWidth=4;tx.stroke();
+
+  // Draw "t" letter inside hexagon
+  tx.font='bold 200px Arial';
+  tx.textAlign='center';tx.textBaseline='middle';
+  tx.fillStyle='rgba(255,255,255,.95)';
+  tx.shadowColor='rgba(0,229,255,.8)';
+  tx.shadowBlur=20;
+  tx.fillText('t', 0, 18);
+  tx.restore();
+
+  // Subtle latitude/longitude grid
+  tx.globalAlpha=.06;
+  for(let lat=0;lat<size;lat+=size/8){
+    tx.beginPath();tx.moveTo(0,lat);tx.lineTo(size,lat);
+    tx.strokeStyle='rgba(0,229,255,1)';tx.lineWidth=1;tx.stroke();
+  }
+  for(let lon=0;lon<size;lon+=size/8){
+    tx.beginPath();tx.moveTo(lon,0);tx.lineTo(lon,size);
+    tx.strokeStyle='rgba(0,229,255,1)';tx.lineWidth=1;tx.stroke();
+  }
+  tx.globalAlpha=1;
+
+  return tc;
+}
+
+function openMoon(){
+  const overlay = g('moon-overlay');
+  overlay.classList.add('open');
+
+  if(moonScene){
+    if(moonAnimId)cancelAnimationFrame(moonAnimId);
+    moonAnimId=requestAnimationFrame(animateMoon);
+    return;
+  }
+
+  const canvas = g('moon-three-canvas');
+  const w = canvas.parentElement.clientWidth || 320;
+  const h = canvas.parentElement.clientHeight || 320;
+
+  moonRenderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  moonRenderer.setSize(w, h);
+  moonRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  moonRenderer.setClearColor(0x000000, 0);
+
+  moonScene = new THREE.Scene();
+
+  // Stars background in moon scene
+  const starGeo = new THREE.BufferGeometry();
+  const starVerts = [];
+  for(let i=0;i<2000;i++){
+    starVerts.push((Math.random()-.5)*2000,(Math.random()-.5)*2000,(Math.random()-.5)*2000);
+  }
+  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+  const starMat = new THREE.PointsMaterial({color:0xaaccff,size:.6,transparent:true,opacity:.7});
+  moonScene.add(new THREE.Points(starGeo,starMat));
+
+  // Moon sphere
+  const geo = new THREE.SphereGeometry(1, 64, 64);
+  const texCanvas = buildTelcoinTexture();
+  const tex = new THREE.CanvasTexture(texCanvas);
+  const mat = new THREE.MeshPhongMaterial({
+    map: tex,
+    shininess: 15,
+    specular: new THREE.Color(0x004466),
+  });
+  const moon = new THREE.Mesh(geo, mat);
+  moonScene.add(moon);
+
+  // Atmosphere glow shell
+  const atmGeo = new THREE.SphereGeometry(1.04, 32, 32);
+  const atmMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(0x00E5FF),
+    transparent:true, opacity:.06, side: THREE.BackSide
+  });
+  moonScene.add(new THREE.Mesh(atmGeo, atmMat));
+
+  // Lighting — key light from upper right (like a sun)
+  const key = new THREE.DirectionalLight(0xffffff, 1.2);
+  key.position.set(3,2,2);
+  moonScene.add(key);
+  const fill = new THREE.DirectionalLight(0x003366, .3);
+  fill.position.set(-2,-1,-2);
+  moonScene.add(fill);
+  moonScene.add(new THREE.AmbientLight(0x001122, .5));
+
+  // Camera
+  const cam = new THREE.PerspectiveCamera(45, 1, .1, 1000);
+  cam.position.z = 2.6;
+
+  let time=0;
+  function animateMoon(){
+    moonAnimId=requestAnimationFrame(animateMoon);
+    time+=0.004;
+    moon.rotation.y = time;
+    moon.rotation.x = Math.sin(time*.3)*.08;
+    moonRenderer.render(moonScene, cam);
+  }
+  animateMoon();
+}
+
+function closeMoon(){
+  g('moon-overlay').classList.remove('open');
+  if(moonAnimId){cancelAnimationFrame(moonAnimId);moonAnimId=null;}
+}
+window.openMoon=openMoon;
+window.closeMoon=closeMoon;
+
+// Close on backdrop click
+g('moon-overlay').addEventListener('click', e=>{
+  if(e.target===g('moon-overlay'))closeMoon();
+});
+// Close on Escape
+document.addEventListener('keydown', e=>{ if(e.key==='Escape')closeMoon(); });
+
 
 // ── GLOBE ─────────────────────────────────────────────────────────────────────
 (function(){const c=g('stars'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;for(let i=0;i<300;i++){x.beginPath();x.arc(Math.random()*c.width,Math.random()*c.height,Math.random()*1.1,0,Math.PI*2);x.fillStyle=`rgba(200,220,255,${(Math.random()*.45+.08).toFixed(2)})`;x.fill();}})();
