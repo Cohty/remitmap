@@ -403,7 +403,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   font-size:10px;color:#7aa8cc;text-align:center;opacity:.6;
 }
 @media(max-width:680px){
-  #search-wrap{left:10px;right:50px;width:auto;top:76px;transform:none}
+  #search-wrap{left:10px;right:50px;width:auto;top:148px;transform:none}
 }
 
 /* ══ TELCOIN CHAIN PANEL ══ */
@@ -469,6 +469,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   font-weight:700;color:#e8f4ff;line-height:1;
 }
 .chain-stat-value.cyan{color:#00E5FF}
+.chain-stat-value a{color:inherit;text-decoration:none;border-bottom:.5px solid rgba(0,229,255,.3);transition:border-color .15s}
+.chain-stat-value a:hover{border-bottom-color:#00E5FF}
 .chain-stat-full{
   grid-column:1/-1;background:rgba(0,0,0,.2);
   border-radius:7px;padding:8px 11px;
@@ -684,7 +686,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="chain-divider" style="margin-top:6px"></div>
       <div class="chain-footer">
         <span id="chain-updated">Connecting…</span>
-        <a id="chain-link" href="https://telscan.io/chain" target="_blank" rel="noopener">VIEW ON TELSCAN ↗</a>
+        <a id="chain-link" href="https://telscan.io/" target="_blank" rel="noopener">VIEW ON TELSCAN ↗</a>
       </div>
     </div>
   </div>
@@ -1200,16 +1202,30 @@ function renderProviders(name){
   const cur=window.CURRENCY?.[name]||'LOCAL';
   const allProvs=window.PROVIDERS?.[name]||window.PROVIDERS?.['default']||[];
   const isMNO=window.TELCOIN_MNO_COUNTRIES?.has(name);
+  // USD rates (always needed for provider cost math)
   const usdRates=baseCurrency==='USD'?fxRates:(()=>{
     try{const c=JSON.parse(sessionStorage.getItem(FX_CACHE_PREFIX+'USD')||'{}');return c.rates||{};}catch(_){return {};}
   })();
-  const rate=usdRates[cur];
+
+  // Mid-market rate: baseCurrency → destination currency
+  // fxRates already reflects baseCurrency (e.g. if base=GBP, fxRates[INR] = INR per GBP)
+  let rate=null;
+  if(cur==='USD'){
+    // destination is USD — rate is just 1/fxRates[USD] if base!=USD, else 1
+    rate=baseCurrency==='USD'?1:(fxRates['USD']?1/fxRates['USD']:null);
+  } else if(baseCurrency==='USD'){
+    rate=usdRates[cur];
+  } else {
+    // cross rate: baseCurrency → cur via fxRates (already base=baseCurrency)
+    rate=fxRates[cur]||null;
+  }
+  const usdRate=usdRates[cur]; // keep for provider calculations below
 
   // Mid-market bar
-  g('mm-label').textContent=`MID-MARKET RATE · USD → ${cur}`;
+  g('mm-label').textContent=`MID-MARKET RATE · ${baseCurrency} → ${cur}`;
   if(rate){
-    const d=rate>100?0:rate>10?2:4;
-    g('mm-value').textContent=`1 USD = ${rate.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}`;
+    const d=rate>10000?0:rate>100?0:rate>10?2:4;
+    g('mm-value').textContent=`1 ${baseCurrency} = ${rate.toLocaleString(undefined,{maximumFractionDigits:d})} ${cur}`;
     const ts=fxTs?new Date(fxTs).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
     g('mm-time').innerHTML=ts?`<div style="text-align:right;font-family:'Space Mono',monospace;font-size:7.5px;color:#7aa8cc"><div>LIVE</div><div style="opacity:.6">${ts}</div></div>`:'';
     g('mm-upd').style.display='none';
@@ -1352,6 +1368,7 @@ function selectCountry(id,name){
   g('rem-note').textContent=mno.note||'';g('rem-year-pill').textContent=wb.year||'2024';g('rem-year-badge').textContent='DATA '+(wb.year||'2024');
   const sb=g('rem-src-badge');sb.textContent=wb.source||'BASELINE 2024';sb.className='badge '+(wb.source==='WORLD BANK'?'badge-live':'badge-base');
   g('info-panel').style.display='block';
+  dirty=true;
 }
 function closePanel(){g('info-panel').style.display='none';currentCountry=null;selId=null;}
 window.closePanel=closePanel;
@@ -1565,18 +1582,19 @@ async function pollChain(){
     const dot = g('chain-dot');
     if(dot){ dot.className = 'chain-dot'; }
 
-    // Update peek strip (always visible)
-    const pb = g('peek-block'); if(pb) pb.textContent = blockNumFmt;
-    const pt = g('peek-txs');   if(pt) pt.textContent = chainTotalTxs.toLocaleString();
+    // Update peek strip (always visible) — with links
+    const pb = g('peek-block'); if(pb) pb.innerHTML = `<a href="${CHAIN_EXPLORER}/block/${blockNum}" target="_blank" rel="noopener" style="color:#e8f4ff;text-decoration:none;border-bottom:.5px solid rgba(255,255,255,.2)">${blockNumFmt}</a>`;
+    const pt = g('peek-txs');   if(pt) pt.innerHTML = `<a href="${CHAIN_EXPLORER}/txs" target="_blank" rel="noopener" style="color:#e8f4ff;text-decoration:none;border-bottom:.5px solid rgba(255,255,255,.2)">${chainTotalTxs.toLocaleString()}</a>`;
     const pg = g('peek-gas');   if(pg) pg.textContent = gasPrice;
 
-    // Update expanded stats
-    const csb = g('cs-block');     if(csb) csb.textContent = blockNumFmt;
-    const cst = g('cs-txs');       if(cst) cst.textContent = chainTotalTxs.toLocaleString();
-    const csg = g('cs-gas');       if(csg) csg.textContent = gasPrice;
+    // Update expanded stats — with telscan links
+    const E = CHAIN_EXPLORER;
+    const csb = g('cs-block');     if(csb) csb.innerHTML = `<a href="${E}/block/${blockNum}" target="_blank" rel="noopener">${blockNumFmt}</a>`;
+    const cst = g('cs-txs');       if(cst) cst.innerHTML = `<a href="${E}/txs" target="_blank" rel="noopener">${chainTotalTxs.toLocaleString()}</a>`;
+    const csg = g('cs-gas');       if(csg) csg.innerHTML = `<a href="${E}/gastracker" target="_blank" rel="noopener">${gasPrice}</a>`;
     const csw = g('cs-wallets');   if(csw) csw.textContent = chainBaseWallets.toLocaleString();
-    const csbt= g('cs-blocktxs');  if(csbt)csbt.textContent= blockTxCount + ' txs';
-    const csc = g('cs-contracts'); if(csc) csc.textContent = chainBaseContracts.toLocaleString();
+    const csbt= g('cs-blocktxs');  if(csbt)csbt.innerHTML = `<a href="${E}/block/${blockNum}" target="_blank" rel="noopener">${blockTxCount} txs</a>`;
+    const csc = g('cs-contracts'); if(csc) csc.innerHTML = `<a href="${E}/tokens" target="_blank" rel="noopener">${chainBaseContracts.toLocaleString()}</a>`;
 
     const upd = g('chain-updated');
     if(upd) upd.textContent = 'UPDATED ' + now;
