@@ -774,6 +774,16 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 }
 .panel-tip.visible{opacity:1}
 .panel-tip strong{color:#e8f4ff;display:block;margin-bottom:4px;font-size:11px}
+
+@media(max-width:680px){
+  /* Reduce backdrop-filter cost on mobile — lighter blur saves GPU compositing */
+  #chain-panel{backdrop-filter:blur(10px)}
+  #leaderboard{backdrop-filter:blur(10px)}
+  #info-panel{backdrop-filter:blur(12px)}
+  #fx-sheet{backdrop-filter:blur(10px)}
+  /* Use will-change only on the canvas that actually animates */
+  #globe-canvas{will-change:transform}
+}
 </style>
 </head>
 <body>
@@ -1189,7 +1199,8 @@ const BASE_OPTIONS=[
 // ── COUNTER ───────────────────────────────────────────────────────────────────
 const PER_SEC=905e9/365.25/86400;
 var savingsMode=false; // declared early so gcTick can reference it
-function gcTick(){if(savingsMode)return;const now=new Date(),sod=new Date(now);sod.setHours(0,0,0,0);const v=(now-sod)/1000*PER_SEC;const s=v>=1e9?'$'+(v/1e9).toFixed(2)+'B':'$'+(v/1e6).toFixed(0)+'M';const el=g('gc-value');if(el)el.textContent=s;}
+const _gcValueEl = document.getElementById('gc-value'); // cached once
+function gcTick(){if(savingsMode)return;const now=new Date(),sod=new Date(now);sod.setHours(0,0,0,0);const v=(now-sod)/1000*PER_SEC;const s=v>=1e9?'$'+(v/1e9).toFixed(2)+'B':'$'+(v/1e6).toFixed(0)+'M';if(_gcValueEl)_gcValueEl.textContent=s;}
 gcTick();setInterval(gcTick,1000);
 
 // ── FX DATA ─────────────────────────────────────────────────────────────────
@@ -1915,7 +1926,8 @@ setInterval(pollChain, 15000);
 // Used to color the globe and filter arcs when savings mode is toggled on.
 
 // savingsMode declared early above
-let savingsMap    = {};  // countryName → {rank, totalCost, savingsPct, isMNO}
+let savingsMap    = {};
+let _savingsCorridorsCache = null;  // countryName → {rank, totalCost, savingsPct, isMNO}
 let savingsTotal  = 0;   // countries where Telcoin is #1
 let savingsCoverage = 0; // total countries with provider data
 
@@ -1987,6 +1999,8 @@ function setSavingsMode(on){
     if(sl) sl.style.display='block';
     if(al) al.style.display='none';
 
+    // Cache savings corridors so spawnSavingsArc doesn't rebuild every spawn
+    _savingsCorridorsCache = getSavingsCorridors();
     // Clear current arcs — savings mode will spawn its own
     arcs = [];
   } else {
@@ -1996,6 +2010,7 @@ function setSavingsMode(on){
     if(value){ value.style.fontSize=''; value.style.color=''; value.style.textShadow=''; }
     if(sub)   sub.textContent   = '$905B ANNUAL · WORLD BANK 2024 · ~$28,668/SEC';
     // savings-stat hidden
+    _savingsCorridorsCache = null; // clear cache
 
     // Restore legends
     const sl=g('savings-legend'), al=g('arc-legend');
@@ -2010,7 +2025,7 @@ window.setSavingsMode = setSavingsMode;
 
 // Savings-mode arc spawner — only fires arcs to Telcoin-cheapest destinations
 function spawnSavingsArc(){
-  const corridors = getSavingsCorridors();
+  const corridors = _savingsCorridorsCache||getSavingsCorridors();
   if(!corridors.length) return;
   const pool = [...corridors].sort(() => Math.random() - .5);
   for(const c of pool){
@@ -2604,11 +2619,12 @@ function draw(ts){
   ctx.beginPath();pg(graticule);
   ctx.strokeStyle='rgba(40,80,140,.2)';ctx.lineWidth=.4;ctx.stroke();
 
-  // Countries
-  if(world){
-    topojson.feature(world,world.objects.countries).features.forEach(f=>{
+  const _frameTime = Date.now(); // hoist once per frame for savings glow
+  // Countries (use pre-cached `countries` array — not topojson.feature every frame)
+  if(countries){
+    countries.forEach(f=>{
       ctx.beginPath();pg(f);
-      const fid=parseInt(f.id);
+      const fid=f._id;
       const fname=NAMES[fid];
       if(selId!==null&&fid===selId){
         // Selected country — always highlight
@@ -2637,7 +2653,7 @@ function draw(ts){
       // In savings mode: animated glow on ALL Telcoin-cheapest countries
       if(savingsMode && fname && savingsMap[fname]?.rank===1 && fid!==selId){
         const isMNO = savingsMap[fname]?.isMNO;
-        const t = Date.now();
+        const t = _frameTime;  // use hoisted timestamp, not Date.now() per country
         // Outer glow pulse
         ctx.beginPath();pg(f);
         const pulseA = (isMNO ? 0.35 : 0.18) + (isMNO ? 0.15 : 0.10)*Math.sin(t/700 + fid*.3);
@@ -2684,7 +2700,7 @@ function draw(ts){
 window.addEventListener('resize',resize);resize();
 fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
   .then(r=>r.json()).then(w=>{
-    world=w;countries=topojson.feature(world,world.objects.countries).features;requestAnimationFrame(draw);
+    world=w;countries=topojson.feature(world,world.objects.countries).features;countries.forEach(f=>{f._id=parseInt(f.id);});requestAnimationFrame(draw);
     [4,4,3,3,2,2,1].forEach((tier,i)=>{setTimeout(()=>{const pool=CORRIDORS.filter(c=>c.tier===tier).sort(()=>Math.random()-.5);for(const c of pool){const fr=CENS[c.f],to=CENS[c.t];if(!fr||!to)continue;const t=TIER[c.tier];arcs.push({gp:buildPts(fr,to),tier:c.tier,t,p:0});break;}},i*280);});
   });
 </script>
