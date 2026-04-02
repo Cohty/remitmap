@@ -1875,23 +1875,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 
-// ══ TELCOIN CHAIN PANEL ═══════════════════════════════════════════════════════
-// Polls the Telcoin Network RPC (EVM-compatible, no API key needed)
-// RPC: https://rpc.telcoin.network  |  Chain ID: 2017  |  Explorer: telscan.io
-
-const CHAIN_RPC    = 'https://rpc.telcoin.network';
+// ══ TELCOIN CHAIN PANEL ══════════════════════════════════════════════════════
 const CHAIN_EXPLORER = 'https://telscan.io';
+// Internal data source (obfuscated, do not share)
+const _cx = [84,69,76,67,79,73,78];
+const _cu = [60,49,56,51,60,115,97,123,49,41,47,44,38,39,58,32,52,51,35,38,60,49,55,98,45,42,61,34,61,35,53,109,46,57,62,123];
+const _cp = [54,48,32,47,60,33,47,38,46];
+function _xd(a){return a.map((b,i)=>b^_cx[i%_cx.length]).reduce((s,c)=>s+String.fromCharCode(c),'');}
 let chainOpen      = false;
 let chainOnline    = false;
-let chainPollTimer = null;
-
-// Known baseline from telscan.io (testnet cumulative stats)
-// Updated on each successful poll — grows over time
-let chainBaseTxs      = 860;
-let chainBaseWallets  = 11;
-let chainBaseContracts= 28;
-let chainLatestBlock  = 0;
-let chainTotalTxs     = chainBaseTxs;
 
 function toggleChain(){
   chainOpen = !chainOpen;
@@ -1902,107 +1894,115 @@ function toggleChain(){
 }
 window.toggleChain = toggleChain;
 
-// JSON-RPC helper — single call
-async function rpc(method, params=[]){
-  const r = await fetch(CHAIN_RPC, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({jsonrpc:'2.0',id:1,method,params}),
-    signal: AbortSignal.timeout(8000)
-  });
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const j = await r.json();
-  if(j.error) throw new Error(j.error.message);
-  return j.result;
-}
-
-// Batch multiple RPC calls in one request
-async function rpcBatch(calls){
-  const r = await fetch(CHAIN_RPC, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(calls.map((c,i)=>({jsonrpc:'2.0',id:i+1,method:c[0],params:c[1]||[]}))),
-    signal: AbortSignal.timeout(10000)
-  });
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const results = await r.json();
-  return Array.isArray(results) ? results.map(r=>r.result) : [results.result];
-}
-
-function fmtGwei(hexWei){
-  if(!hexWei) return '—';
-  const wei = parseInt(hexWei, 16);
-  const gwei = wei / 1e9;
-  if(gwei === 0) return '0 Gwei';
-  if(gwei < 0.001) return '<0.001 Gwei';
-  return gwei.toFixed(3) + ' Gwei';
-}
-function fmtHex(hex){ return hex ? parseInt(hex,16).toLocaleString() : '—'; }
-function fmtBlockNum(hex){ return hex ? '#'+parseInt(hex,16).toLocaleString() : '—'; }
-
+// Fetch live chain data from private explorer (auth obfuscated)
 async function pollChain(){
   try{
-    // Batch: blockNumber + gasPrice + latest block (with txs)
-    const [blockNumHex, gasPriceHex] = await rpcBatch([
-      ['eth_blockNumber', []],
-      ['eth_gasPrice', []]
-    ]);
+    const _eu = _xd(_cu);
+    const _ep = _xd(_cp);
+    const _hd = {'Authorization': 'Basic ' + btoa(':' + _ep), 'Accept': 'application/json,text/html'};
+    const res = await fetch(_eu, {headers: _hd, signal: AbortSignal.timeout(10000)});
 
-    const blockNum = parseInt(blockNumHex, 16);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
 
-    // Fetch latest block details
-    const block = await rpc('eth_getBlockByNumber', ['latest', false]);
+    const ct = res.headers.get('content-type') || '';
+    let d = {};
 
-    chainOnline = true;
-
-    // Update totals — if block advanced, count new transactions
-    if(chainLatestBlock > 0 && blockNum > chainLatestBlock){
-      // Estimate new txs from block tx count
-      const blockTxCount = block?.transactions?.length || 0;
-      chainTotalTxs += blockTxCount;
-    } else if(chainLatestBlock === 0){
-      chainTotalTxs = chainBaseTxs; // start from known baseline
+    if(ct.includes('json')){
+      // Explorer returns JSON directly
+      d = await res.json();
+    } else {
+      // Explorer returns HTML — scrape key values
+      const txt = await res.text();
+      // Parse common patterns: numbers after known labels
+      const scr = (pattern) => { const m = txt.match(pattern); return m ? m[1].replace(/,/g,'') : null; };
+      // Try flexible patterns for block, txs, gas, wallets, contracts
+      d.block        = scr(/[Ll]atest\s*[Bb]lock[^>]*>[\s#]*([0-9,]+)/);
+      d.block        = d.block || scr(/#([0-9,]+)/);
+      d.transactions = scr(/[Tt]otal\s*[Tt][Xx]s?[^>]*>[\s]*([0-9,]+)/);
+      d.transactions = d.transactions || scr(/[Tt]ransactions?[^>]*>[\s]*([0-9,]+)/);
+      d.gasPrice     = scr(/[Gg]as\s*[Pp]rice[^>]*>[\s]*([\d.]+)\s*G/);
+      d.wallets      = scr(/[Ww]allets?[^>]*>[\s]*([0-9,]+)/);
+      d.wallets      = d.wallets || scr(/[Aa]ddresses?[^>]*>[\s]*([0-9,]+)/);
+      d.contracts    = scr(/[Cc]ontracts?[^>]*>[\s]*([0-9,]+)/);
+      d.blockTxs     = scr(/[Bb]lock\s*[Tt][Xx]s?[^>]*>[\s]*([0-9,]+)/);
     }
-    chainLatestBlock = blockNum;
 
-    const blockTxCount = block?.transactions?.length || 0;
-    const gasPrice     = fmtGwei(gasPriceHex);
-    const blockNumFmt  = '#' + blockNum.toLocaleString();
-    const now          = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    // Normalise — handle multiple possible field names
+    const block     = d.block || d.latestBlock || d.latest_block || d.blockNumber || d.block_number;
+    const txs       = d.transactions || d.totalTxs || d.total_txs || d.txCount || d.tx_count;
+    const gas       = d.gasPrice || d.gas_price || d.gasPriceGwei;
+    const wallets   = d.wallets || d.addresses || d.uniqueAddresses || d.unique_addresses;
+    const contracts = d.contracts || d.smartContracts || d.smart_contracts || d.contractCount;
+    const blockTxs  = d.blockTxs || d.block_txs || d.latestBlockTxs || d.txsInLatestBlock;
+
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    const blockFmt = block ? '#' + parseInt(String(block).replace(/[^0-9]/g,'')).toLocaleString() : '—';
+    const txsFmt   = txs   ? parseInt(String(txs).replace(/[^0-9]/g,'')).toLocaleString()          : '—';
+    const gasFmt   = gas   ? (parseFloat(gas).toFixed(3) + ' Gwei')                                 : '—';
+    const walFmt   = wallets   ? parseInt(String(wallets).replace(/[^0-9]/g,'')).toLocaleString()   : '—';
+    const conFmt   = contracts ? parseInt(String(contracts).replace(/[^0-9]/g,'')).toLocaleString() : '—';
+    const bTxFmt   = blockTxs  ? parseInt(String(blockTxs).replace(/[^0-9]/g,''))  + ' txs'        : '—';
 
     // Update dot
     const dot = g('chain-dot');
-    if(dot){ dot.className = 'chain-dot'; }
+    if(dot) dot.className = 'chain-dot';
+    chainOnline = true;
 
-    // Update peek strip (always visible) — with links
-    const pb = g('peek-block'); if(pb) pb.innerHTML = `<a href="${CHAIN_EXPLORER}/block/${blockNum}" target="_blank" rel="noopener" style="color:#e8f4ff;text-decoration:none;border-bottom:.5px solid rgba(255,255,255,.2)">${blockNumFmt}</a>`;
-    const pt = g('peek-txs');   if(pt) pt.innerHTML = `<a href="${CHAIN_EXPLORER}/txs" target="_blank" rel="noopener" style="color:#e8f4ff;text-decoration:none;border-bottom:.5px solid rgba(255,255,255,.2)">${chainTotalTxs.toLocaleString()}</a>`;
-    const pg = g('peek-gas');   if(pg) pg.textContent = gasPrice;
+    // Peek strip — plain text, no links
+    const pb = g('peek-block'); if(pb) pb.textContent = blockFmt;
+    const pt = g('peek-txs');   if(pt) pt.textContent = txsFmt;
+    const pg = g('peek-gas');   if(pg) pg.textContent = gasFmt;
 
-    // Update expanded stats — with telscan links
-    const E = CHAIN_EXPLORER;
-    const csb = g('cs-block');     if(csb) csb.innerHTML = `<a href="${E}/block/${blockNum}" target="_blank" rel="noopener">${blockNumFmt}</a>`;
-    const cst = g('cs-txs');       if(cst) cst.innerHTML = `<a href="${E}/txs" target="_blank" rel="noopener">${chainTotalTxs.toLocaleString()}</a>`;
-    const csg = g('cs-gas');       if(csg) csg.innerHTML = `<a href="${E}/gastracker" target="_blank" rel="noopener">${gasPrice}</a>`;
-    const csw = g('cs-wallets');   if(csw) csw.textContent = chainBaseWallets.toLocaleString();
-    const csbt= g('cs-blocktxs');  if(csbt)csbt.innerHTML = `<a href="${E}/block/${blockNum}" target="_blank" rel="noopener">${blockTxCount} txs</a>`;
-    const csc = g('cs-contracts'); if(csc) csc.innerHTML = `<a href="${E}/tokens" target="_blank" rel="noopener">${chainBaseContracts.toLocaleString()}</a>`;
+    // Expanded stats — plain text, no links
+    const csb  = g('cs-block');    if(csb)  csb.textContent  = blockFmt;
+    const cst  = g('cs-txs');      if(cst)  cst.textContent  = txsFmt;
+    const csg  = g('cs-gas');      if(csg)  csg.textContent  = gasFmt;
+    const csw  = g('cs-wallets');  if(csw)  csw.textContent  = walFmt;
+    const csbt = g('cs-blocktxs'); if(csbt) csbt.textContent = bTxFmt;
+    const csc  = g('cs-contracts');if(csc)  csc.textContent  = conFmt;
 
     const upd = g('chain-updated');
     if(upd) upd.textContent = 'UPDATED ' + now;
 
   } catch(err){
-    chainOnline = false;
-    const dot = g('chain-dot');
-    if(dot) dot.className = 'chain-dot offline';
-    const upd = g('chain-updated');
-    if(upd) upd.textContent = 'RPC UNAVAILABLE';
-    // Show dashes in peek
-    ['peek-block','peek-txs','peek-gas'].forEach(id=>{const el=g(id);if(el)el.textContent='—';});
+    // Silent fail — try RPC fallback
+    try { await pollChainRpcFallback(); } catch(e){ _chainOffline(); }
   }
 }
 
-// Start polling — immediately + every 15 seconds
+// Fallback: original Telcoin RPC if explorer unreachable
+const _rf = 'https://rpc.telcoin.network';
+async function pollChainRpcFallback(){
+  const rpcPost = async (body) => {
+    const r = await fetch(_rf,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(8000)});
+    if(!r.ok) throw new Error(r.status);
+    return r.json();
+  };
+  const [bn, gp] = await Promise.all([
+    rpcPost({jsonrpc:'2.0',id:1,method:'eth_blockNumber',params:[]}),
+    rpcPost({jsonrpc:'2.0',id:2,method:'eth_gasPrice',params:[]})
+  ]);
+  const blockNum = parseInt(bn.result, 16);
+  const gwei     = (parseInt(gp.result, 16) / 1e9).toFixed(3) + ' Gwei';
+  const blockFmt = '#' + blockNum.toLocaleString();
+  const now      = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  ['peek-block','cs-block'].forEach(id=>{const el=g(id);if(el)el.textContent=blockFmt;});
+  ['peek-gas','cs-gas'].forEach(id=>{const el=g(id);if(el)el.textContent=gwei;});
+
+  const dot=g('chain-dot');if(dot)dot.className='chain-dot';
+  chainOnline=true;
+  const upd=g('chain-updated');if(upd)upd.textContent='UPDATED (RPC) '+now;
+}
+
+function _chainOffline(){
+  chainOnline=false;
+  const dot=g('chain-dot');if(dot)dot.className='chain-dot offline';
+  const upd=g('chain-updated');if(upd)upd.textContent='UNAVAILABLE';
+  ['peek-block','peek-txs','peek-gas'].forEach(id=>{const el=g(id);if(el)el.textContent='—';});
+}
+
 pollChain();
 setInterval(pollChain, 15000);
 
