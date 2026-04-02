@@ -8,8 +8,11 @@
 
 ```
 remitmap/
-├── index.html   — The entire globe app (globe, UI, live data, Telcoin card)
-└── data.js      — All editable data: MNOs, providers, currencies
+├── index.html        — The entire app (globe, UI, live data, all logic inline)
+├── data.js           — All editable data: MNOs, providers, currencies (169 countries)
+├── sw.js             — Service worker (PWA offline support)
+├── manifest.json     — PWA manifest (installable as home screen app)
+└── icons/            — App icons (72, 96, 128, 144, 152, 192, 384, 512px)
 ```
 
 **Only ever edit `data.js`** for data updates. `index.html` only needs touching for layout or design changes.
@@ -21,64 +24,96 @@ remitmap/
 ### 🌐 Interactive 3D Globe
 - Drag to rotate, scroll/pinch to zoom, click any country for data
 - Heat-mapped remittance arc animations — 4 tiers by corridor volume:
-  - **MEGA** (>$30B) — thick bright white arcs with glow (US→Mexico, UAE→India, etc.)
+  - **MEGA** (>$30B) — thick bright white arcs with glow
   - **MAJOR** ($10–30B) — orange arcs
   - **MID** ($2–10B) — cyan arcs
   - **MINOR** (<$2B) — faint thin lines
 - 70+ active remittance corridors animated simultaneously
+- Adaptive FPS — arc count reduces automatically on slower devices
 
 ### 📡 Global Remittances Counter
-- Live ticker in the top bar counting estimated remittances sent today
-- Based on $905B annual (World Bank 2024) ÷ seconds elapsed since midnight
-- Updates every second
+- Live ticker counting estimated remittances sent today
+- Based on $905B annual (World Bank 2024) ÷ seconds elapsed since midnight UTC
+- Updates every second; resets at midnight
+- Hover tooltip explains the calculation methodology
 
 ### 💱 Live FX Ticker (desktop left panel / mobile sheet)
 - 41 currency pairs with live mid-market rates
-- **Base currency switcher** — change from USD to AED, GBP, EUR, SAR, CAD, AUD, SGD, and more
-- Rates refresh every hour from ExchangeRate-API
+- Base currency switcher — USD, AED, GBP, EUR, SAR, CAD, AUD, SGD, and more
+- Rates refresh every hour from ECB (primary) with ExchangeRate-API fallback
 - Click any currency row to fly the globe to that country
-- Collapsible on desktop; slides up as a sheet on mobile
+
+### 🔍 Search Bar
+- Type any country name to fly to it and open its info panel
+- Desktop: always visible below the FX panel
+- Mobile: tap the search icon to expand; auto-hides when a panel opens
 
 ### 🏆 Leaderboard (bottom strip)
-- **Top Receivers** and **Top Senders** tabs, 15 countries each
-- Fully scrollable with proportional volume bars
-- Click any country row to fly the globe there and open its panel
-- Collapses when not in use
+- Top Receivers and Top Senders tabs, 15 countries each
+- Click any row to fly the globe there and open its panel
 
-### 🗂️ Country Info Panel (click any country)
+### 🟦 Telcoin Mode
+Toggle in the top bar. When active:
+- Globe recolors — cyan glow = Telcoin cheapest, dark = other provider wins
+- MNO partner countries pulse with an animated ring
+- Counter shows "TELCOIN CHEAPEST IN X COUNTRIES"
+- Arc animations switch to savings-mode corridors only
+- Click the TELCOIN MODE label for a tooltip explaining the methodology
+
+### ⛓️ Telcoin Network Panel
+Live stats from the Telcoin Network blockchain, polled every 15 seconds:
+- Latest block, total transactions, gas price (Gwei), wallet count, smart contracts
+- TESTNET / MAINNET badge; all stats link to telscan.io
+- Desktop: bottom-right corner, slides left when Send Money is open
+- Mobile: bottom of screen, hides when FX sheet or leaderboard opens
+
+### 🗂️ Country Info Panel
+
 **Overview tab:**
 - Leading Mobile Network Operator — name, subscriber count, market share
-- Live remittance inflows, outflows, and % of GDP (World Bank API)
-- Data year label and source badge (LIVE vs CACHED vs BASELINE)
+- Live remittance inflows and outflows with ⓘ tooltips
+- Data year label and source badge (LIVE / CACHED / BASELINE 2024)
 
 **Send Money tab:**
 - Live USD mid-market rate for the destination currency
-- **Telcoin Featured Card** — lowest cost provider, always shown first:
-  - Real Telcoin logo, fee/margin/total cost stats
-  - Exact amount recipient gets in local currency at Telcoin's rate
+- Telcoin card — ranked honestly by total cost, always shown:
+  - Fee, FX margin, total cost, exact local currency amount
   - Savings comparison bar vs traditional provider average
-  - MNO PARTNER badge for Philippines and Malaysia (direct wallet delivery)
-  - Referral CTA linking to `telco.in/en/referral?invitedby=6ce29b6420a`
-  - Collapsible **About Telcoin** section with links to app, website, X, Telegram, CoinGecko
-- Top 3 traditional providers (Wise, Remitly, WorldRemit, etc.) ranked by total cost
-- Country-specific providers for 30+ major corridors; global defaults for all others
+  - MNO PARTNER badge for Philippines and Malaysia
+  - Referral CTA → telco.in/en/referral?invitedby=6ce29b6420a
+  - Collapsible About Telcoin section
+- Top traditional providers ranked by cost (Wise, Remitly, WorldRemit, etc.)
 
-### 📱 Mobile Friendly
-- Bottom navigation bar with FX Rates, Leaderboard, and Zoom buttons
-- FX sheet slides up full-width on mobile
-- Pinch-to-zoom on the globe
-- Country panel anchors to bottom of screen above nav bar
-- Full responsive layout for all screen sizes
+### 📱 Mobile Layout
+- Bottom nav: FX Rates, Leaderboard, Zoom +/−
+- All panels use safe-area insets for notch/home-bar devices
+- Telcoin Network panel hides when FX or leaderboard opens
+- Telcoin Mode toggle hides when Send Money is open
+
+### 📲 PWA
+- Installable as a home screen app on iOS and Android
+- Service worker caches static assets
+- Manifest with full icon set (8 sizes)
+
+### 🌙 Easter Egg
+Click the small faint moon in the starfield:
+- Spinning 3D Telcoin globe (Three.js) — drag to spin with inertia
+- Synthwave perspective grid floor with scrolling cyan/magenta lines
+- CRT scanlines overlay (pure CSS, zero JS cost)
+- Glitch text effect on the CTA button
+- Confetti burst on open
+- Twinkling star field
+- Segmented VISITORS counter (persists in localStorage)
+- "SEND MONEY SMARTER TODAY ↗" → Telcoin referral link
 
 ---
 
 ## 🔄 How Live Data Works
 
-### Layer 1 — Remittance Volumes (World Bank API, auto-fetched)
-Fetches inflows, outflows, and % of GDP for every country on page load.
-- Cached **7 days** in `localStorage`
-- Status badge shows: 🟢 LIVE / 🟡 CACHED / 🔴 OFFLINE
-- Falls back to 2024 baseline data silently if API unreachable
+### World Bank Remittance Volumes
+- Auto-fetched on page load
+- Cached 7 days in `localStorage` under key `wb_rem_v5`
+- Falls back to 2024 baseline if API unreachable
 
 | Indicator | World Bank Code |
 |-----------|----------------|
@@ -86,66 +121,68 @@ Fetches inflows, outflows, and % of GDP for every country on page load.
 | Outflows sent (USD) | `BM.TRF.PWKR.CD.DT` |
 | Inflows as % of GDP | `BX.TRF.PWKR.DT.GD.ZS` |
 
-### Layer 2 — Live Exchange Rates (ExchangeRate-API, auto-fetched)
-- Fetches rates for the selected base currency on every page load
-- Cached **1 hour** in `sessionStorage` per base currency
-- Used across the FX ticker, Send Money tab, and Telcoin savings calculator
+### Exchange Rates
+- ECB/Frankfurter primary, ExchangeRate-API fallback
+- Cached 1 hour in `sessionStorage` under key `fx_v6_<base>`
 
-### Layer 3 — MNO & Provider Data (`data.js`, manually maintained)
-- Edit on GitHub → Netlify redeploys in ~30 seconds
-- No real-time API exists for MNO subscriber counts or provider fee schedules
+### Telcoin Network Stats
+- Polls `rpc.telcoin.network` every 15 seconds (Chain ID: 2017)
+- Always live, no caching
+
+### MNO & Provider Data
+- Stored in `data.js`, deployed via GitHub → Cloudflare Pages (~30 sec)
 
 ---
 
-## ✏️ Updating Data on GitHub
+## ✏️ Updating Data
 
-### Update an MNO entry
+### MNO entry
 ```js
-// In data.js → window.MNO_DATA
+// data.js → window.MNO_DATA
 'Algeria': {
-  mno: 'Mobilis (ATM)',     // operator name
-  subs: '21.5 million',     // subscriber count
-  share: '35%',             // market share
-  outflow: '$1.3B',         // sent (WB API fallback)
-  note: 'Context note...'   // shown in panel
+  mno: 'Mobilis (ATM)',
+  subs: '21.5 million',
+  share: '35%',
+  outflow: '$1.3B',
+  note: 'Context note...'
 },
 ```
 
-### Update a provider's rates
+### Provider rates
 ```js
-// In data.js → window.PROVIDERS
+// data.js → window.PROVIDERS
 'India': [
   {
     name: 'Wise',
-    fee_usd: 1.14,      // flat fee in USD for a $200 transfer
-    fx_pct: 0.41,       // FX margin above mid-market (%)
+    fee_usd: 1.14,       // flat fee for $200 transfer
+    fx_pct: 0.41,        // FX margin above mid-market (%)
     delivery: 'Instant',
-    type: 'digital',    // 'digital' | 'bank' | 'agent'
+    type: 'digital',     // 'digital' | 'bank' | 'agent'
     url: 'https://wise.com',
     color: '#00B9FF',
     note: 'Best USD→INR rate'
   },
-  // Telcoin is added via the tel() helper function — see top of data.js
+  // Telcoin added automatically via tel() helper — see top of data.js
 ],
 ```
 
-**Total estimated cost** = (fee_usd ÷ 200 × 100) + fx_pct
+**Total cost** = (fee_usd ÷ 200 × 100) + fx_pct
 
-### Update Telcoin's MNO partner countries
+### Telcoin MNO partner countries
 ```js
-// In data.js
+// data.js
 window.TELCOIN_MNO_COUNTRIES = new Set([
-  'Philippines',   // Smart/PLDT confirmed
-  'Malaysia',      // confirmed
-  // Add new MNO markets here as partnerships expand
+  'Philippines',
+  'Malaysia',
+  // Add new markets here
 ]);
 ```
 
-### Force-refresh all user caches
-Bump the cache key in `index.html` to make all users re-fetch fresh data:
+### Force-refresh user caches
 ```js
-const WB_KEY = 'wb_rem_v5';           // increment from v4
-const FX_CACHE_PREFIX = 'fx_v5_';     // increment from v4_
+// index.html — bump these to make all users re-fetch
+const WB_KEY = 'wb_rem_v6';       // was v5
+const FX_CACHE_PREFIX = 'fx_v7_'; // was fx_v6_
 ```
 
 ---
@@ -154,14 +191,14 @@ const FX_CACHE_PREFIX = 'fx_v5_';     // increment from v4_
 
 | Data | Source | Frequency |
 |------|--------|-----------|
-| Remittance inflows/outflows | [World Bank KNOMAD](https://data.worldbank.org/indicator/BX.TRF.PWKR.CD.DT) | Annual (Jun–Oct) |
-| Remittances as % of GDP | [World Bank WDI](https://data.worldbank.org/indicator/BX.TRF.PWKR.DT.GD.ZS) | Annual |
-| Live exchange rates | [ExchangeRate-API](https://exchangerate-api.com) | Live (1-hr cache) |
-| MNO subscriber counts | GSMA Intelligence, TeleGeography | Quarterly — update `data.js` |
-| Provider fees & FX margins | World Bank RPW, Monito.com | As they change — update `data.js` |
-| Telcoin rates & partnerships | [telco.in](https://www.telco.in/en), telcoin.network | As they change — update `data.js` |
-| World map topology | [world-atlas@2](https://github.com/topojson/world-atlas) (50m resolution) | Stable |
-| Country flags | [flagcdn / lipis flag-icons](https://github.com/lipis/flag-icons) | Stable |
+| Remittance inflows/outflows | World Bank KNOMAD | Annual |
+| Remittances % of GDP | World Bank WDI | Annual |
+| Exchange rates | ECB + ExchangeRate-API | Live (1-hr cache) |
+| Telcoin Network stats | rpc.telcoin.network | Live (15-sec poll) |
+| MNO subscriber counts | GSMA Intelligence, TeleGeography | Quarterly — update data.js |
+| Provider fees & margins | World Bank RPW Q1 2025 | As they change — update data.js |
+| World map | world-atlas@2 (50m TopoJSON) | Stable |
+| Country flags | lipis/flag-icons | Stable |
 
 ---
 
@@ -169,23 +206,24 @@ const FX_CACHE_PREFIX = 'fx_v5_';     // increment from v4_
 
 | Resource | URL |
 |----------|-----|
-| App (with referral) | [telco.in/en/referral?invitedby=6ce29b6420a](https://www.telco.in/en/referral?invitedby=6ce29b6420a) |
-| Official Website | [telco.in/en](https://www.telco.in/en) |
+| App (referral) | [telco.in/en/referral?invitedby=6ce29b6420a](https://www.telco.in/en/referral?invitedby=6ce29b6420a) |
+| Website | [telco.in/en](https://www.telco.in/en) |
+| Chain Explorer | [telscan.io](https://telscan.io) |
 | X — Telcoin | [@telcoin](https://x.com/telcoin) |
 | X — Telcoin Association | [@TelcoinTAO](https://x.com/TelcoinTAO) |
-| Telegram Announcements | [t.me/Telcoin_Announcements](https://t.me/Telcoin_Announcements) |
-| TEL Token (CoinGecko) | [coingecko.com/en/coins/telcoin](https://www.coingecko.com/en/coins/telcoin) |
+| Telegram | [t.me/Telcoin_Announcements](https://t.me/Telcoin_Announcements) |
+| CoinGecko | [coingecko.com/en/coins/telcoin](https://www.coingecko.com/en/coins/telcoin) |
 
 ---
 
-## 📝 Useful Links for Manual Data Updates
+## 📝 Data Update Resources
 
-- **World Bank RPW** (provider costs): [remittanceprices.worldbank.org](https://remittanceprices.worldbank.org)
-- **Monito** (live provider comparisons): [monito.com](https://monito.com)
-- **GSMA Intelligence** (MNO data): [gsma.com/intelligence](https://www.gsma.com/solutions-and-impact/gsma-intelligence/)
-- **TeleGeography** (MNO data): [telegeography.com](https://telegeography.com)
-- **World Bank KNOMAD**: [knomad.org/data/remittances](https://www.knomad.org/data/remittances)
+- **World Bank RPW**: [remittanceprices.worldbank.org](https://remittanceprices.worldbank.org)
+- **Monito**: [monito.com](https://monito.com)
+- **GSMA Intelligence**: [gsma.com/intelligence](https://www.gsma.com/solutions-and-impact/gsma-intelligence/)
+- **TeleGeography**: [telegeography.com](https://telegeography.com)
+- **KNOMAD**: [knomad.org/data/remittances](https://www.knomad.org/data/remittances)
 
 ---
 
-*Built with D3.js · TopoJSON · World Bank Open Data · ExchangeRate-API · lipis/flag-icons · Powered by Telcoin*
+*Built with D3.js · TopoJSON · Three.js · World Bank Open Data · ECB/ExchangeRate-API · lipis/flag-icons · Powered by Telcoin*
