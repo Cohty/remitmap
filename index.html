@@ -663,14 +663,18 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   position:fixed;inset:0;z-index:9999;
   background:rgba(0,0,8,.96);
   display:none;align-items:center;justify-content:center;flex-direction:column;
+  gap:0;
   backdrop-filter:blur(8px);
   animation:moonFadeIn .5s ease;
+  /* Stack: globe → button → counter, all centered, no overlap */
+  padding-top:0;overflow:hidden;
 }
 #moon-overlay.open{display:flex}
 @keyframes moonFadeIn{from{opacity:0}to{opacity:1}}
 
 #moon-canvas-wrap{
-  position:relative;width:320px;height:320px;
+  position:relative;width:300px;height:300px;
+  flex-shrink:0;
 }
 #moon-three-canvas{width:100%!important;height:100%!important;border-radius:50%;}
 
@@ -685,15 +689,17 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #moon-close:hover{color:#e8f4ff;background:rgba(255,255,255,.12)}
 
 #moon-tagline{
-  margin-top:28px;text-align:center;
+  margin-top:20px;text-align:center;
   font-family:'Space Mono',monospace;
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
 }
 #join-telcoin-btn{
   display:inline-block;
   font-family:'Space Mono',monospace;font-size:13px;font-weight:700;
   letter-spacing:.18em;color:#00E5FF;text-decoration:none;
   border:.5px solid rgba(0,229,255,.5);border-radius:24px;
-  padding:10px 28px;margin-bottom:20px;
+  padding:10px 28px;margin:0;
   background:rgba(0,229,255,.07);
   transition:all .2s;
 }
@@ -722,7 +728,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
 @media(max-width:680px){
   #easter-moon{top:100px;right:20px;width:22px;height:22px}
-  #moon-canvas-wrap{width:260px;height:260px}
+  #moon-canvas-wrap{width:240px;height:240px}
 }
 
 /* ══ TOOLTIP ══ */
@@ -784,6 +790,83 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   /* Use will-change only on the canvas that actually animates */
   #globe-canvas{will-change:transform}
 }
+
+/* ══ MOON BG CANVAS (grid + sun) ══ */
+#moon-bg-canvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;z-index:0;
+}
+
+/* ══ CRT SCANLINES — pure CSS, zero JS ══ */
+#moon-crt{
+  position:absolute;inset:0;z-index:9998;pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,.18) 3px,
+    rgba(0,0,0,.18) 4px
+  );
+  border-radius:4px;
+}
+/* CRT edge vignette */
+#moon-crt::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,
+    transparent 55%,
+    rgba(0,0,0,.55) 100%
+  );
+}
+
+/* ══ GLITCH TEXT ══ */
+#moon-glitch-text{
+  position:relative;display:inline-block;
+}
+/* Glitch via CSS animation on pseudo-elements */
+@keyframes glitch-clip1{
+  0%,90%,100%{clip-path:inset(50% 0 30% 0)}
+  92%{clip-path:inset(10% 0 75% 0)}
+  94%{clip-path:inset(65% 0 5% 0)}
+  96%{clip-path:inset(40% 0 45% 0)}
+}
+@keyframes glitch-clip2{
+  0%,90%,100%{clip-path:inset(20% 0 60% 0)}
+  93%{clip-path:inset(80% 0 5% 0)}
+  95%{clip-path:inset(5% 0 80% 0)}
+  97%{clip-path:inset(50% 0 25% 0)}
+}
+@keyframes glitch-shift1{
+  0%,90%,100%{transform:translateX(0)}
+  92%{transform:translateX(-3px)}
+  94%{transform:translateX(3px)}
+  96%{transform:translateX(-2px)}
+}
+@keyframes glitch-shift2{
+  0%,90%,100%{transform:translateX(0)}
+  93%{transform:translateX(3px)}
+  95%{transform:translateX(-3px)}
+  97%{transform:translateX(2px)}
+}
+#moon-glitch-text::before,
+#moon-glitch-text::after{
+  content:attr(data-text);
+  position:absolute;top:0;left:0;width:100%;height:100%;
+}
+#moon-glitch-text::before{
+  color:#ff00aa;
+  animation:glitch-clip1 6s infinite linear, glitch-shift1 6s infinite linear;
+  opacity:.8;
+}
+#moon-glitch-text::after{
+  color:#00ffff;
+  animation:glitch-clip2 6s infinite linear, glitch-shift2 6s infinite linear;
+  opacity:.8;
+}
+
+/* Make moon-overlay children stack above bg canvas */
+#moon-canvas-wrap{position:relative;z-index:1}
+#moon-tagline{position:relative;z-index:1}
+#moon-close{z-index:10000}
 </style>
 </head>
 <body>
@@ -798,13 +881,17 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <!-- MOON OVERLAY -->
   <div id="moon-overlay">
     <canvas id="moon-confetti-canvas"></canvas>
+    <!-- Synthwave grid + retro sun drawn on one shared canvas (performance: 1 rAF) -->
+    <canvas id="moon-bg-canvas"></canvas>
+    <!-- CRT scanlines overlay — pure CSS, zero JS cost -->
+    <div id="moon-crt"></div>
     <button id="moon-close" onclick="closeMoon()">✕</button>
     <div id="moon-canvas-wrap">
       <div id="moon-glow"></div>
       <canvas id="moon-three-canvas"></canvas>
     </div>
     <div id="moon-tagline">
-      <a href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener" id="join-telcoin-btn">SEND MONEY SMARTER TODAY ↗</a>
+      <a href="https://www.telco.in/en/referral?invitedby=6ce29b6420a" target="_blank" rel="noopener" id="join-telcoin-btn"><span id="moon-glitch-text" data-text="SEND MONEY SMARTER TODAY ↗">SEND MONEY SMARTER TODAY ↗</span></a>
       <div id="visitor-counter-wrap">
         <div id="visitor-label">VISITORS</div>
         <div id="visitor-digits"></div>
@@ -2168,9 +2255,133 @@ function buildTelcoinTexture(){
   return tc;
 }
 
+
+// ── MOON VAPORWAVE BACKGROUND (grid + retro sun) ─────────────────────────────
+let moonBgAnimId = null;
+let moonBgCanvas = null;
+let moonBgCtx    = null;
+let moonBgT      = 0;
+
+function initMoonBg(){
+  moonBgCanvas = g('moon-bg-canvas');
+  if(!moonBgCanvas) return;
+  moonBgCanvas.width  = window.innerWidth;
+  moonBgCanvas.height = window.innerHeight;
+  moonBgCtx = moonBgCanvas.getContext('2d');
+}
+
+function drawMoonBg(){
+  if(!moonBgCtx) return;
+  const W = moonBgCanvas.width;
+  const H = moonBgCanvas.height;
+  const ctx = moonBgCtx;
+
+  ctx.clearRect(0, 0, W, H);
+  moonBgT += 0.003;
+
+  const cx = W / 2;
+  // Horizon sits at 78% — grid only occupies bottom 22%, well clear of globe/button/counter
+  const horizon = H * 0.78;
+  const gridBottom = H;
+  const vp = { x: cx, y: horizon };
+
+  // ── Subtle purple sky gradient above the grid ────────────────────────────
+  const sky = ctx.createLinearGradient(0, horizon * 0.4, 0, horizon);
+  sky.addColorStop(0, 'rgba(0,0,8,0)');
+  sky.addColorStop(1, 'rgba(60,0,100,.35)');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, horizon * 0.4, W, horizon * 0.6);
+
+  // ── Grid floor ──────────────────────────────────────────────────────────
+  const hLineCount = 12;
+  const perspective = 1.9;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, horizon, W, H - horizon);
+  ctx.clip();
+
+  // Horizontal lines — scroll toward viewer
+  for(let i = 0; i <= hLineCount; i++){
+    const t = (i / hLineCount + moonBgT * 0.35) % 1;
+    const tPersp = Math.pow(t, perspective);
+    const y = horizon + (gridBottom - horizon) * tPersp;
+    const alpha = 0.08 + tPersp * 0.6;
+
+    const lineGrad = ctx.createLinearGradient(0, y, W, y);
+    lineGrad.addColorStop(0,   'rgba(255,0,180,0)');
+    lineGrad.addColorStop(0.2, `rgba(200,0,255,${alpha})`);
+    lineGrad.addColorStop(0.5, `rgba(0,229,255,${alpha})`);
+    lineGrad.addColorStop(0.8, `rgba(200,0,255,${alpha})`);
+    lineGrad.addColorStop(1,   'rgba(255,0,180,0)');
+    ctx.strokeStyle = lineGrad;
+    ctx.lineWidth = 0.7 + tPersp * 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  // Vertical lines — fan from vanishing point
+  const vLineCount = 20;
+  const spread = W * 1.8;
+  for(let i = 0; i <= vLineCount; i++){
+    const frac = i / vLineCount;
+    const bx = (cx - spread / 2) + frac * spread;
+    const dist = Math.abs(frac - 0.5);
+    const alpha = 0.55 - dist * 0.9;
+    if(alpha <= 0) continue;
+
+    const colGrad = ctx.createLinearGradient(vp.x, vp.y, bx, gridBottom);
+    colGrad.addColorStop(0,   'rgba(255,0,180,0)');
+    colGrad.addColorStop(0.3, `rgba(200,0,255,${alpha * 0.5})`);
+    colGrad.addColorStop(1,   `rgba(0,229,255,${alpha})`);
+    ctx.strokeStyle = colGrad;
+    ctx.lineWidth = 0.6 + (1 - dist * 2) * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(vp.x, vp.y);
+    ctx.lineTo(bx, gridBottom);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Horizon glow line
+  const hGlow = ctx.createLinearGradient(0, horizon, W, horizon);
+  hGlow.addColorStop(0,   'rgba(255,0,180,0)');
+  hGlow.addColorStop(0.25,'rgba(255,0,200,.8)');
+  hGlow.addColorStop(0.5, 'rgba(0,229,255,1)');
+  hGlow.addColorStop(0.75,'rgba(255,0,200,.8)');
+  hGlow.addColorStop(1,   'rgba(255,0,180,0)');
+  ctx.strokeStyle = hGlow;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, horizon);
+  ctx.lineTo(W, horizon);
+  ctx.stroke();
+}
+
+function startMoonBg(){
+  initMoonBg();
+  function tick(){
+    if(!g('moon-overlay').classList.contains('open')){
+      moonBgAnimId = null;
+      return; // stop rAF when overlay is closed — no wasted frames
+    }
+    drawMoonBg();
+    moonBgAnimId = requestAnimationFrame(tick);
+  }
+  if(moonBgAnimId) cancelAnimationFrame(moonBgAnimId);
+  moonBgAnimId = requestAnimationFrame(tick);
+}
+
+function stopMoonBg(){
+  if(moonBgAnimId){ cancelAnimationFrame(moonBgAnimId); moonBgAnimId = null; }
+}
+
 function openMoon(){
   const overlay = g('moon-overlay');
   overlay.classList.add('open');
+  startMoonBg(); // start vaporwave bg
   // Launch confetti
   launchMoonConfetti();
   // Spawn twinkling stars in overlay
@@ -2360,6 +2571,7 @@ function spawnMoonStars(){
 
 function closeMoon(){
   g('moon-overlay').classList.remove('open');
+  stopMoonBg(); // stop vaporwave bg rAF
   if(moonAnimId){cancelAnimationFrame(moonAnimId);moonAnimId=null;}
   if(moonStarInterval){clearInterval(moonStarInterval);moonStarInterval=null;}
   const overlay=g('moon-overlay');
