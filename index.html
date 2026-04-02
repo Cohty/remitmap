@@ -471,6 +471,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     max-height:50vh;
   }
   #app.panel-open #search-wrap{opacity:0!important;pointer-events:none!important}
+  /* Hide savings toggle when country panel is open on mobile */
+  #app.panel-open #savings-toggle-wrap{opacity:0!important;pointer-events:none!important;transition:opacity .2s}
+  #app.panel-open #gc-label{opacity:0!important}
+  #app.panel-open #gc-sub{opacity:0!important}
 }
 
 /* ══ TELCOIN CHAIN PANEL ══ */
@@ -1327,7 +1331,7 @@ loadWB();
 // ── FX RENDER ─────────────────────────────────────────────────────────────────
 let fxOpen=true,mobFxOpen=false;
 function toggleFX(){fxOpen=!fxOpen;g('fx-panel').classList.toggle('fx-hidden',!fxOpen);g('fx-collapse-tab').textContent=fxOpen?'›':'‹';document.getElementById('app').classList.toggle('fx-hidden',!fxOpen);}
-function toggleMobFX(){mobFxOpen=!mobFxOpen;g('fx-sheet').classList.toggle('sheet-open',mobFxOpen);g('mob-fx-btn').classList.toggle('active',mobFxOpen);if(mobFxOpen)renderFXSheet();}
+function toggleMobFX(){mobFxOpen=!mobFxOpen;g('fx-sheet').classList.toggle('sheet-open',mobFxOpen);g('mob-fx-btn').classList.toggle('active',mobFxOpen);if(mobFxOpen)renderFXSheet();setChainVisible(!mobFxOpen);}
 
 function fmtRate(r,base){
   if(!r&&r!==0)return'–';
@@ -1382,6 +1386,14 @@ function fxClick(code){
 
 // ── LEADERBOARD ───────────────────────────────────────────────────────────────
 let lbOpen=false,lbTab='receivers';
+
+function setChainVisible(show){
+  const cp = g('chain-panel');
+  if(!cp) return;
+  cp.style.transition = 'opacity .2s, pointer-events 0s';
+  cp.style.opacity    = show ? '' : '0';
+  cp.style.pointerEvents = show ? '' : 'none';
+}
 function toggleLB(){
   lbOpen=!lbOpen;
   g('leaderboard').classList.toggle('lb-open',lbOpen);
@@ -1389,9 +1401,11 @@ function toggleLB(){
   g('lb-arrow').textContent=lbOpen?'▼':'▲';
   g('mob-lb-btn').classList.toggle('active',lbOpen);
   if(lbOpen)renderLB();
-  // Hide moon when leaderboard is open (it would overlap)
+  // Hide moon when leaderboard is open
   const em=g('easter-moon');
   if(em){em.style.opacity=lbOpen?'0':'';em.style.pointerEvents=lbOpen?'none':'all';}
+  // Hide chain panel on mobile when LB open
+  setChainVisible(!lbOpen);
 }
 function setLbTab(tab){lbTab=tab;g('lb-tab-r').classList.toggle('active',tab==='receivers');g('lb-tab-s').classList.toggle('active',tab==='senders');renderLB();}
 function renderLB(){
@@ -1563,7 +1577,7 @@ function renderProviders(name){
       return `<div class="tel-card" style="margin-bottom:8px">
         <div class="tel-header">
           <div class="tel-name-row">
-            <div class="tel-logo"><svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" width="44" height="44">  <defs>    <linearGradient id="tlg" x1="0%" y1="0%" x2="100%" y2="100%">      <stop offset="0%" style="stop-color:#00c8ee;stop-opacity:1"/>      <stop offset="100%" style="stop-color:#0099cc;stop-opacity:1"/>    </linearGradient>    <filter id="tglow">      <feGaussianBlur stdDeviation="1.5" result="blur"/>      <feComposite in="SourceGraphic" in2="blur" operator="over"/>    </filter>  </defs>  <polygon points="24,2 42,12 42,36 24,46 6,36 6,12" fill="url(#tlg)" filter="url(#tglow)"/>  <polygon points="24,4 40,13.5 40,34.5 24,44 8,34.5 8,13.5" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="0.8"/>  <text x="24" y="33" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="24" fill="white" opacity="0.95">t</text></svg></div>
+            <div class="tel-logo"><svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" width="44" height="44"><defs><linearGradient id="tlg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#00d4f0;stop-opacity:1"/><stop offset="100%" style="stop-color:#0088bb;stop-opacity:1"/></linearGradient></defs><polygon points="24,2 42,12 42,36 24,46 6,36 6,12" fill="url(#tlg2)"/><polygon points="24,4.5 40,13.5 40,34.5 24,43.5 8,34.5 8,13.5" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/><!-- Telcoin t: vertical stem with crossbar and curved bottom --><rect x="21.5" y="12" width="5" height="22" rx="2.5" fill="white" opacity="0.95"/><rect x="15" y="18" width="18" height="4.5" rx="2.2" fill="white" opacity="0.95"/></svg></div>
             <span class="tel-name">${medal} Telcoin</span>
           </div>
           <div class="tel-badges">
@@ -2375,11 +2389,36 @@ const TOOLTIPS = {
     hideTimer = setTimeout(()=>tip.classList.remove('visible'), 120);
   }
 
-  Object.keys(TOOLTIPS).forEach(id=>{
+  // Hover tooltips for counter elements (desktop)
+  ['global-counter','gc-label','gc-value'].forEach(id=>{
     const el = g(id);
     if(!el) return;
     el.addEventListener('mouseenter', ()=>showTip(el, id));
     el.addEventListener('mouseleave', hideTip);
+  });
+
+  // SAVINGS TOGGLE LABEL: click to show/hide, click anywhere else to close
+  let savingsTipOpen = false;
+  const savLabel = g('savings-toggle-label');
+  if(savLabel){
+    savLabel.style.cursor = 'pointer';
+    savLabel.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(savingsTipOpen){
+        tip.classList.remove('visible');
+        savingsTipOpen = false;
+      } else {
+        showTip(savLabel, 'savings-toggle-wrap');
+        savingsTipOpen = true;
+      }
+    });
+  }
+  // Close savings tip on any click outside
+  document.addEventListener('click', ()=>{
+    if(savingsTipOpen){
+      tip.classList.remove('visible');
+      savingsTipOpen = false;
+    }
   });
 })();
 
